@@ -5,3 +5,13 @@
 body {
   font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
 }
+
+.radial-pulse {
+  animation: radial-pulse 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+@keyframes radial-pulse {
+  0%, 100% { opacity: 0.5; r: calc(var(--r, 40) * 1px); }
+  50% { opacity: 0.15; r: calc((var(--r, 40) + 6) * 1px); }
+}

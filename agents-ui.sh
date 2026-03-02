@@ -127,7 +127,8 @@ print(json.dumps(settings, indent=2))
     echo ""
     echo -e "  ${YELLOW}?${RESET} Delete the agents-ui directory? (${DIM}${SCRIPT_DIR}${RESET})"
     read -rp "    [y/N] " DELETE_REPO
-    if [[ "${DELETE_REPO,,}" == "y" || "${DELETE_REPO,,}" == "yes" ]]; then
+    DELETE_REPO_LOWER="$(echo "$DELETE_REPO" | tr '[:upper:]' '[:lower:]')"
+    if [[ "$DELETE_REPO_LOWER" == "y" || "$DELETE_REPO_LOWER" == "yes" ]]; then
         rm -rf "$SCRIPT_DIR"
         echo -e "  ${GREEN}✓${RESET} Directory deleted"
     else
