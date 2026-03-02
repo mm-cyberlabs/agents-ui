@@ -15,3 +15,7 @@ body {
   0%, 100% { opacity: 0.5; r: calc(var(--r, 40) * 1px); }
   50% { opacity: 0.15; r: calc((var(--r, 40) + 6) * 1px); }
 }
+
+g[style*="cursor: pointer"]:hover .agent-card-hover {
+  opacity: 0.06 !important;
+}

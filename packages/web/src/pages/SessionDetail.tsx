@@ -68,7 +68,7 @@ export function SessionDetail({ sessions, activity }: Props) {
       </div>
 
       {/* Agent map — full width */}
-      <AgentTree root={session.agentTree} />
+      <AgentTree root={session.agentTree} activity={sessionActivity} />
 
       {/* Token chart + Activity stream below */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
