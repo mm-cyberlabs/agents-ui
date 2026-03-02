@@ -11,7 +11,7 @@ import { AgentDetail } from "./AgentDetail.js";
 
 const STATUS = {
   running: { bg: "#064e3b", border: "#22c55e", text: "#bbf7d0", dot: "#22c55e" },
-  completed: { bg: "#252017", border: "#3D3425", text: "#C4A584", dot: "#8B7355" },
+  completed: { bg: "#1f2937", border: "#4b5563", text: "#d1d5db", dot: "#6b7280" },
   error: { bg: "#450a0a", border: "#ef4444", text: "#fecaca", dot: "#ef4444" },
 } as const;
 
@@ -35,7 +35,7 @@ function TreeEdge({ edge }: { edge: PositionedEdge }) {
 
   return (
     <g>
-      <path d={d} stroke="#3D3425" strokeWidth={1.5} fill="none" />
+      <path d={d} stroke="#374151" strokeWidth={1.5} fill="none" />
       {isRunning && (
         <>
           <path d={d} stroke="#22c55e" strokeWidth={2} fill="none" opacity={0.3} />
@@ -137,12 +137,12 @@ function TreeNode({
         </text>
 
         {node.model && (
-          <text x={pad} y={35} fill="#8B7355" fontSize={10}>
+          <text x={pad} y={35} fill="#6b7280" fontSize={10}>
             {node.model}
           </text>
         )}
 
-        <text x={pad} y={52} fill="#C4A584" fontSize={10}>
+        <text x={pad} y={52} fill="#9ca3af" fontSize={10}>
           {formatTokens(tokens)} tok · {node.toolUseCount} tools
           {node.durationMs != null && node.status === "completed"
             ? ` · ${(node.durationMs / 1000).toFixed(1)}s`
@@ -312,7 +312,7 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
   const totalAll = statusCounts.running + statusCounts.completed + statusCounts.error;
 
   const btnClass =
-    "w-8 h-8 flex items-center justify-center rounded text-sm font-mono transition-colors";
+    "w-8 h-8 flex items-center justify-center rounded bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white text-sm font-mono transition-colors";
 
   const filterButtons: { key: StatusFilter; label: string; count: number }[] = [
     { key: "all", label: "All", count: totalAll },
@@ -322,13 +322,9 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
   ];
 
   return (
-    <div
-      ref={containerRef}
-      className="rounded-lg p-4 w-full relative"
-      style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)" }}
-    >
+    <div ref={containerRef} className="bg-gray-900 rounded-lg p-4 border border-gray-800 w-full relative">
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-sm font-bold" style={{ color: "var(--accent)" }}>
+        <h3 className="text-sm font-bold text-cyan-400">
           Agent Map ({subCount} subagent{subCount !== 1 ? "s" : ""})
         </h3>
 
@@ -341,12 +337,11 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
               <button
                 key={f.key}
                 onClick={() => setStatusFilter(f.key)}
-                className="px-2 py-0.5 text-xs rounded border transition-colors"
-                style={{
-                  backgroundColor: isActive ? "rgba(230, 125, 34, 0.2)" : "var(--bg-card)",
-                  borderColor: isActive ? "rgba(230, 125, 34, 0.4)" : "var(--border-color)",
-                  color: isActive ? "var(--accent)" : "var(--text-muted)",
-                }}
+                className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                  isActive
+                    ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400"
+                    : "bg-gray-800 border-gray-700 text-gray-500 hover:text-gray-300"
+                }`}
               >
                 {f.label} ({f.count})
               </button>
@@ -357,24 +352,11 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
 
       {/* Zoom controls */}
       <div className="absolute bottom-6 right-6 flex flex-col gap-1 z-10">
-        <button
-          onClick={zoomIn}
-          className={btnClass}
-          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
-          title="Zoom in"
-        >+</button>
-        <button
-          onClick={zoomOut}
-          className={btnClass}
-          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-secondary)" }}
-          title="Zoom out"
-        >−</button>
-        <button
-          onClick={fitToView}
-          className={btnClass}
-          style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-secondary)", fontSize: 10 }}
-          title="Reset view"
-        >⟳</button>
+        <button onClick={zoomIn} className={btnClass} title="Zoom in">+</button>
+        <button onClick={zoomOut} className={btnClass} title="Zoom out">−</button>
+        <button onClick={fitToView} className={btnClass} title="Reset view" style={{ fontSize: 10 }}>
+          ⟳
+        </button>
       </div>
 
       <div className="overflow-hidden rounded" style={{ height: viewH }}>

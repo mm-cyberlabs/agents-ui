@@ -2,22 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --accent: #E67D22;
-  --accent-dim: #D97757;
-  --text-primary: #F5E6D3;
-  --text-secondary: #C4A584;
-  --text-muted: #8B7355;
-  --bg-base: #1A1612;
-  --bg-card: #252017;
-  --bg-surface: #2E271D;
-  --border-color: #3D3425;
-}
-
 body {
   font-family: "SF Mono", "Fira Code", "JetBrains Mono", monospace;
-  background-color: var(--bg-base);
-  color: var(--text-primary);
 }
 
 .radial-pulse {

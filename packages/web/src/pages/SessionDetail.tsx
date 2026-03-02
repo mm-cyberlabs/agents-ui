@@ -30,10 +30,10 @@ export function SessionDetail({ sessions, activity }: Props) {
   if (!session) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
-        <Link to="/" className="hover:underline text-sm" style={{ color: "var(--accent)" }}>
+        <Link to="/" className="text-cyan-400 hover:underline text-sm">
           ← Back to Dashboard
         </Link>
-        <div className="text-center py-20" style={{ color: "var(--text-muted)" }}>
+        <div className="text-center py-20 text-gray-600">
           Session not found
         </div>
       </div>
@@ -47,11 +47,11 @@ export function SessionDetail({ sessions, activity }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link to="/" className="hover:underline text-sm" style={{ color: "var(--accent)" }}>
+          <Link to="/" className="text-cyan-400 hover:underline text-sm">
             ← Back
           </Link>
-          <h1 className="text-xl font-bold mt-1" style={{ color: "var(--text-primary)" }}>{project}</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm" style={{ color: "var(--text-muted)" }}>
+          <h1 className="text-xl font-bold text-white mt-1">{project}</h1>
+          <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
             <span>Branch: {session.gitBranch || "-"}</span>
             <span>Version: {session.version || "-"}</span>
             <span>{session.messageCount} messages</span>

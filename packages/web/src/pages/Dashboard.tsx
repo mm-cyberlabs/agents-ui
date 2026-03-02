@@ -46,6 +46,7 @@ export function Dashboard({ sessions, connected }: Props) {
       }
       group.push(s);
     }
+    // Sort groups by most recent activity
     return Array.from(map.entries())
       .map(([projectDir, groupSessions]) => ({ projectDir, sessions: groupSessions }))
       .sort(
@@ -60,8 +61,8 @@ export function Dashboard({ sessions, connected }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold" style={{ color: "var(--accent)" }}>agents-ui</h1>
-          <p className="text-sm" style={{ color: "var(--text-muted)" }}>
+          <h1 className="text-2xl font-bold text-cyan-400">agents-ui</h1>
+          <p className="text-sm text-gray-500">
             Real-time Claude Code agent monitor
           </p>
         </div>
@@ -69,14 +70,14 @@ export function Dashboard({ sessions, connected }: Props) {
           <span
             className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`}
           />
-          <span className="text-sm" style={{ color: "var(--text-muted)" }}>
+          <span className="text-sm text-gray-500">
             {connected ? "Connected" : "Disconnected"}
           </span>
         </div>
       </div>
 
       {sorted.length === 0 ? (
-        <div className="text-center py-20" style={{ color: "var(--text-muted)" }}>
+        <div className="text-center py-20 text-gray-600">
           <p className="text-lg mb-2">No sessions found</p>
           <p className="text-sm">
             Start a Claude Code session to see it here.
@@ -103,14 +104,14 @@ export function Dashboard({ sessions, connected }: Props) {
             return (
               <div key={group.projectDir}>
                 <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-sm font-bold uppercase tracking-wider" style={{ color: "var(--accent)" }}>
+                  <h2 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">
                     {getProjectDisplayName(group.projectDir)}
-                    <span className="ml-2" style={{ color: "var(--text-muted)" }}>
+                    <span className="text-gray-500 ml-2">
                       ({group.sessions.length} session
                       {group.sessions.length !== 1 ? "s" : ""})
                     </span>
                   </h2>
-                  <div className="flex gap-4 text-xs" style={{ color: "var(--text-muted)" }}>
+                  <div className="flex gap-4 text-xs text-gray-500">
                     {activeCount > 0 && (
                       <span className="text-green-400">
                         {activeCount} active

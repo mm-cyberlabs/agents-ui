@@ -25,7 +25,7 @@ export function ContextHealth({ usage }: { usage: AggregatedTokenUsage }) {
           cy="50"
           r={radius}
           fill="none"
-          stroke="#3D3425"
+          stroke="#1f2937"
           strokeWidth="8"
         />
         {/* Progress circle */}
@@ -55,7 +55,7 @@ export function ContextHealth({ usage }: { usage: AggregatedTokenUsage }) {
           {percent}%
         </text>
       </svg>
-      <div className="text-xs text-center" style={{ color: "var(--text-muted)" }}>
+      <div className="text-xs text-gray-500 text-center">
         {formatNum(usage.estimatedContextUsed)} / {formatNum(usage.contextWindowSize)}
       </div>
     </div>
