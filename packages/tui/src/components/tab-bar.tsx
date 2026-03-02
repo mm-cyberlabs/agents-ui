@@ -13,7 +13,7 @@ export function TabBar({ tabs, activeIndex }: TabBarProps) {
         <Text
           key={tab}
           bold={i === activeIndex}
-          color={i === activeIndex ? "cyan" : "gray"}
+          color={i === activeIndex ? "#E67D22" : "gray"}
         >
           [{i + 1}] {tab}
         </Text>

@@ -91,7 +91,7 @@ export function App({ serverUrl }: AppProps) {
     <Box flexDirection="column" width="100%">
       {/* Header */}
       <Box justifyContent="space-between" paddingX={1}>
-        <Text bold color="cyan">agents-ui</Text>
+        <Text bold color="#E67D22">agents-ui</Text>
         <Text color={connected ? "green" : "red"}>
           {connected ? "● Connected" : "○ Disconnected"}
         </Text>

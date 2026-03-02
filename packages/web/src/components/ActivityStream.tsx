@@ -14,13 +14,13 @@ const EVENT_CONFIG: Record<
   ActivityEvent["type"],
   { icon: string; color: string }
 > = {
-  text: { icon: "💬", color: "text-gray-300" },
-  tool_start: { icon: "⚡", color: "text-yellow-400" },
-  tool_end: { icon: "✓", color: "text-green-400" },
-  subagent_start: { icon: "🔀", color: "text-cyan-400" },
-  subagent_end: { icon: "🔙", color: "text-cyan-300" },
-  compaction: { icon: "📦", color: "text-purple-400" },
-  error: { icon: "✗", color: "text-red-400" },
+  text: { icon: "\u{1F4AC}", color: "var(--text-secondary)" },
+  tool_start: { icon: "\u26A1", color: "#eab308" },
+  tool_end: { icon: "\u2713", color: "#22c55e" },
+  subagent_start: { icon: "\u{1F500}", color: "var(--accent)" },
+  subagent_end: { icon: "\u{1F519}", color: "var(--accent-dim)" },
+  compaction: { icon: "\u{1F4E6}", color: "var(--text-secondary)" },
+  error: { icon: "\u2717", color: "#ef4444" },
 };
 
 function getDescription(evt: ActivityEvent): string {
@@ -51,25 +51,31 @@ export function ActivityStream({ events }: { events: ActivityEvent[] }) {
 
   if (events.length === 0) {
     return (
-      <div className="bg-gray-900 rounded-lg p-4 border border-gray-800 text-gray-600 text-sm">
+      <div
+        className="rounded-lg p-4 text-sm"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)", color: "var(--text-muted)" }}
+      >
         No activity yet. Waiting for events...
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-900 rounded-lg border border-gray-800 overflow-hidden">
-      <div className="p-3 border-b border-gray-800">
-        <h3 className="text-sm font-bold text-cyan-400">Activity Feed</h3>
+    <div
+      className="rounded-lg overflow-hidden"
+      style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)" }}
+    >
+      <div className="p-3" style={{ borderBottom: "1px solid var(--border-color)" }}>
+        <h3 className="text-sm font-bold" style={{ color: "var(--accent)" }}>Activity Feed</h3>
       </div>
       <div className="max-h-96 overflow-y-auto p-2 space-y-0.5">
         {events.map((evt) => {
           const config = EVENT_CONFIG[evt.type];
           return (
             <div key={evt.id} className="flex items-start gap-2 text-xs py-0.5 font-mono">
-              <span className="text-gray-600 shrink-0">{formatTime(evt.timestamp)}</span>
+              <span className="shrink-0" style={{ color: "var(--text-muted)" }}>{formatTime(evt.timestamp)}</span>
               <span className="shrink-0">{config.icon}</span>
-              <span className={`${config.color} truncate`}>
+              <span className="truncate" style={{ color: config.color }}>
                 {getDescription(evt)}
               </span>
             </div>

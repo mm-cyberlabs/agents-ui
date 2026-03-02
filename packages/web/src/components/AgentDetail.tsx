@@ -29,13 +29,13 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 const EVENT_CONFIG: Record<ActivityEvent["type"], { icon: string; color: string }> = {
-  text: { icon: "\u{1F4AC}", color: "text-gray-300" },
-  tool_start: { icon: "\u26A1", color: "text-yellow-400" },
-  tool_end: { icon: "\u2713", color: "text-green-400" },
-  subagent_start: { icon: "\u{1F500}", color: "text-cyan-400" },
-  subagent_end: { icon: "\u{1F519}", color: "text-cyan-300" },
-  compaction: { icon: "\u{1F4E6}", color: "text-purple-400" },
-  error: { icon: "\u2717", color: "text-red-400" },
+  text: { icon: "\u{1F4AC}", color: "var(--text-secondary)" },
+  tool_start: { icon: "\u26A1", color: "#eab308" },
+  tool_end: { icon: "\u2713", color: "#22c55e" },
+  subagent_start: { icon: "\u{1F500}", color: "var(--accent)" },
+  subagent_end: { icon: "\u{1F519}", color: "var(--accent-dim)" },
+  compaction: { icon: "\u{1F4E6}", color: "var(--text-secondary)" },
+  error: { icon: "\u2717", color: "#ef4444" },
 };
 
 function getDescription(evt: ActivityEvent): string {
@@ -69,7 +69,6 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
 
   const label = node.agentId === "root" ? "Main Agent" : node.agentType ?? node.agentId;
   const tokens = node.tokenUsage;
-  const totalTokens = tokens.totalInputTokens + tokens.totalOutputTokens;
   const contextPct =
     tokens.contextWindowSize > 0
       ? Math.round((tokens.estimatedContextUsed / tokens.contextWindowSize) * 100)
@@ -78,7 +77,6 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
   // Filter activity for this agent
   const agentActivity = useMemo(() => {
     if (node.agentId === "root") {
-      // Root agent: events with no agentId or agentId === "root"
       return activity.filter((e) => !e.agentId || e.agentId === "root");
     }
     return activity.filter((e) => e.agentId === node.agentId);
@@ -109,11 +107,14 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
       onClick={handleBackdropClick}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm"
     >
-      <div className="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl w-[700px] max-w-[90vw] max-h-[85vh] flex flex-col">
+      <div
+        className="rounded-xl shadow-2xl w-[700px] max-w-[90vw] max-h-[85vh] flex flex-col"
+        style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)" }}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-800">
+        <div className="flex items-center justify-between p-4" style={{ borderBottom: "1px solid var(--border-color)" }}>
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-white">{label}</h2>
+            <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{label}</h2>
             <span
               className={`px-2 py-0.5 rounded text-xs border ${STATUS_BADGE[node.status]}`}
             >
@@ -122,7 +123,10 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
           </div>
           <button
             onClick={onClose}
-            className="text-gray-500 hover:text-white text-xl leading-none px-2"
+            className="text-xl leading-none px-2 transition-colors"
+            style={{ color: "var(--text-muted)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
           >
             &times;
           </button>
@@ -134,72 +138,72 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
           <div className="grid grid-cols-2 gap-3 text-sm">
             {node.model && (
               <div>
-                <span className="text-gray-500">Model</span>
-                <div className="text-gray-200 font-mono">{node.model}</div>
+                <span style={{ color: "var(--text-muted)" }}>Model</span>
+                <div className="font-mono" style={{ color: "var(--text-secondary)" }}>{node.model}</div>
               </div>
             )}
             <div>
-              <span className="text-gray-500">Started</span>
-              <div className="text-gray-200 font-mono">{formatTime(node.startedAt)}</div>
+              <span style={{ color: "var(--text-muted)" }}>Started</span>
+              <div className="font-mono" style={{ color: "var(--text-secondary)" }}>{formatTime(node.startedAt)}</div>
             </div>
             {node.durationMs != null && (
               <div>
-                <span className="text-gray-500">Duration</span>
-                <div className="text-gray-200 font-mono">{formatDuration(node.durationMs)}</div>
+                <span style={{ color: "var(--text-muted)" }}>Duration</span>
+                <div className="font-mono" style={{ color: "var(--text-secondary)" }}>{formatDuration(node.durationMs)}</div>
               </div>
             )}
             {node.currentTool && (
               <div>
-                <span className="text-gray-500">Current Tool</span>
+                <span style={{ color: "var(--text-muted)" }}>Current Tool</span>
                 <div className="text-yellow-400 font-mono">{node.currentTool}</div>
               </div>
             )}
           </div>
 
           {/* Token Usage */}
-          <div className="bg-gray-800/50 rounded-lg p-3 space-y-2">
-            <h4 className="text-xs font-bold text-cyan-400">Token Usage</h4>
+          <div className="rounded-lg p-3 space-y-2" style={{ backgroundColor: "var(--bg-surface)" }}>
+            <h4 className="text-xs font-bold" style={{ color: "var(--accent)" }}>Token Usage</h4>
             <div className="grid grid-cols-4 gap-2 text-xs">
               <div>
-                <span className="text-gray-500">Input</span>
-                <div className="text-white font-mono font-bold">{formatTokens(tokens.totalInputTokens)}</div>
+                <span style={{ color: "var(--text-muted)" }}>Input</span>
+                <div className="font-mono font-bold" style={{ color: "var(--text-primary)" }}>{formatTokens(tokens.totalInputTokens)}</div>
               </div>
               <div>
-                <span className="text-gray-500">Output</span>
-                <div className="text-white font-mono font-bold">{formatTokens(tokens.totalOutputTokens)}</div>
+                <span style={{ color: "var(--text-muted)" }}>Output</span>
+                <div className="font-mono font-bold" style={{ color: "var(--text-primary)" }}>{formatTokens(tokens.totalOutputTokens)}</div>
               </div>
               <div>
-                <span className="text-gray-500">Cache Read</span>
-                <div className="text-white font-mono font-bold">{formatTokens(tokens.totalCacheReadTokens)}</div>
+                <span style={{ color: "var(--text-muted)" }}>Cache Read</span>
+                <div className="font-mono font-bold" style={{ color: "var(--text-primary)" }}>{formatTokens(tokens.totalCacheReadTokens)}</div>
               </div>
               <div>
-                <span className="text-gray-500">Cache Write</span>
-                <div className="text-white font-mono font-bold">{formatTokens(tokens.totalCacheWriteTokens)}</div>
+                <span style={{ color: "var(--text-muted)" }}>Cache Write</span>
+                <div className="font-mono font-bold" style={{ color: "var(--text-primary)" }}>{formatTokens(tokens.totalCacheWriteTokens)}</div>
               </div>
             </div>
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-500">Context</span>
-              <div className="flex-1 bg-gray-700 rounded-full h-2">
+              <span style={{ color: "var(--text-muted)" }}>Context</span>
+              <div className="flex-1 rounded-full h-2" style={{ backgroundColor: "var(--border-color)" }}>
                 <div
                   className={`h-2 rounded-full ${contextPct < 50 ? "bg-green-500" : contextPct < 80 ? "bg-yellow-500" : "bg-red-500"}`}
                   style={{ width: `${Math.min(contextPct, 100)}%` }}
                 />
               </div>
-              <span className="text-gray-400 font-mono">{contextPct}%</span>
+              <span className="font-mono" style={{ color: "var(--text-secondary)" }}>{contextPct}%</span>
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
               {formatTokens(tokens.estimatedContextUsed)} / {formatTokens(tokens.contextWindowSize)}
               {tokens.compactionCount > 0 && (
-                <span className="text-purple-400 ml-2">({tokens.compactionCount} compactions)</span>
+                <span className="ml-2" style={{ color: "var(--text-secondary)" }}>({tokens.compactionCount} compactions)</span>
               )}
             </div>
           </div>
 
           {/* Prompt */}
           {node.prompt && (
-            <div className="bg-gray-800/50 rounded-lg p-3">
-              <h4 className="text-xs font-bold text-cyan-400 mb-1">Prompt</h4>
-              <pre className="text-xs text-gray-300 whitespace-pre-wrap max-h-32 overflow-y-auto font-mono">
+            <div className="rounded-lg p-3" style={{ backgroundColor: "var(--bg-surface)" }}>
+              <h4 className="text-xs font-bold mb-1" style={{ color: "var(--accent)" }}>Prompt</h4>
+              <pre className="text-xs whitespace-pre-wrap max-h-32 overflow-y-auto font-mono" style={{ color: "var(--text-secondary)" }}>
                 {node.prompt}
               </pre>
             </div>
@@ -207,30 +211,30 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
 
           {/* Children summary */}
           {node.children.length > 0 && (
-            <div className="text-xs text-gray-500">
+            <div className="text-xs" style={{ color: "var(--text-muted)" }}>
               {node.children.length} subagent{node.children.length !== 1 ? "s" : ""} spawned
               ({node.children.filter((c) => c.status === "running").length} running)
             </div>
           )}
 
           {/* Activity Log */}
-          <div className="bg-gray-800/50 rounded-lg overflow-hidden">
-            <div className="p-2 border-b border-gray-700">
-              <h4 className="text-xs font-bold text-cyan-400">
+          <div className="rounded-lg overflow-hidden" style={{ backgroundColor: "var(--bg-surface)" }}>
+            <div className="p-2" style={{ borderBottom: "1px solid var(--border-color)" }}>
+              <h4 className="text-xs font-bold" style={{ color: "var(--accent)" }}>
                 Activity Log ({agentActivity.length} events)
               </h4>
             </div>
             <div ref={logRef} className="max-h-60 overflow-y-auto p-2 space-y-0.5">
               {agentActivity.length === 0 ? (
-                <div className="text-xs text-gray-600 py-2 text-center">No events for this agent</div>
+                <div className="text-xs py-2 text-center" style={{ color: "var(--text-muted)" }}>No events for this agent</div>
               ) : (
                 agentActivity.map((evt) => {
                   const config = EVENT_CONFIG[evt.type];
                   return (
                     <div key={evt.id} className="flex items-start gap-2 text-xs py-0.5 font-mono">
-                      <span className="text-gray-600 shrink-0">{formatTime(evt.timestamp)}</span>
+                      <span className="shrink-0" style={{ color: "var(--text-muted)" }}>{formatTime(evt.timestamp)}</span>
                       <span className="shrink-0">{config.icon}</span>
-                      <span className={`${config.color} break-words`}>
+                      <span className="break-words" style={{ color: config.color }}>
                         {getDescription(evt)}
                       </span>
                     </div>

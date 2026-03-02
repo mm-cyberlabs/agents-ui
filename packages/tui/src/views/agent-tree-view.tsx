@@ -66,7 +66,7 @@ export function AgentTreeView({ session, selectedIndex }: AgentTreeViewProps) {
       {/* Left: Agent tree */}
       <Box flexDirection="column" padding={1} width="50%">
         <Box gap={1} marginBottom={1}>
-          <Text bold color="cyan">
+          <Text bold color="#E67D22">
             Agent Tree: {getProjectDisplayName(session.projectDir)}
           </Text>
           <Text dimColor>
@@ -133,7 +133,7 @@ function AgentDetail({ node }: { node: AgentNode }) {
     <Box flexDirection="column">
       {/* Name */}
       <Box marginBottom={0}>
-        <Text bold color="cyan">{label}</Text>
+        <Text bold color="#E67D22">{label}</Text>
       </Box>
 
       {/* Status + Model */}

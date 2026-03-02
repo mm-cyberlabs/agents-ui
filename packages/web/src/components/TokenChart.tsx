@@ -10,37 +10,40 @@ export function TokenChart({ usage }: { usage: AggregatedTokenUsage }) {
   const contextFill = usage.estimatedContextUsed / usage.contextWindowSize;
 
   return (
-    <div className="bg-gray-900 rounded-lg p-4 border border-gray-800">
-      <h3 className="text-sm font-bold text-cyan-400 mb-3">Token Usage</h3>
+    <div
+      className="rounded-lg p-4"
+      style={{ backgroundColor: "var(--bg-card)", border: "1px solid var(--border-color)" }}
+    >
+      <h3 className="text-sm font-bold mb-3" style={{ color: "var(--accent)" }}>Token Usage</h3>
 
       <div className="grid grid-cols-2 gap-3 text-sm">
         <div>
-          <span className="text-gray-500">Input</span>
-          <div className="font-bold">{formatNum(usage.totalInputTokens)}</div>
+          <span style={{ color: "var(--text-muted)" }}>Input</span>
+          <div className="font-bold" style={{ color: "var(--text-primary)" }}>{formatNum(usage.totalInputTokens)}</div>
         </div>
         <div>
-          <span className="text-gray-500">Output</span>
-          <div className="font-bold">{formatNum(usage.totalOutputTokens)}</div>
+          <span style={{ color: "var(--text-muted)" }}>Output</span>
+          <div className="font-bold" style={{ color: "var(--text-primary)" }}>{formatNum(usage.totalOutputTokens)}</div>
         </div>
         <div>
-          <span className="text-gray-500">Cache Read</span>
+          <span style={{ color: "var(--text-muted)" }}>Cache Read</span>
           <div className="font-bold text-green-400">
             {formatNum(usage.totalCacheReadTokens)}
           </div>
         </div>
         <div>
-          <span className="text-gray-500">Cache Write</span>
-          <div className="font-bold">{formatNum(usage.totalCacheWriteTokens)}</div>
+          <span style={{ color: "var(--text-muted)" }}>Cache Write</span>
+          <div className="font-bold" style={{ color: "var(--text-primary)" }}>{formatNum(usage.totalCacheWriteTokens)}</div>
         </div>
       </div>
 
       {/* Context gauge */}
       <div className="mt-4">
-        <div className="flex justify-between text-xs text-gray-500 mb-1">
+        <div className="flex justify-between text-xs mb-1" style={{ color: "var(--text-muted)" }}>
           <span>Context Window</span>
           <span>{Math.round(contextFill * 100)}%</span>
         </div>
-        <div className="h-2 bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-2 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-color)" }}>
           <div
             className={`h-full rounded-full transition-all ${
               contextFill < 0.5
@@ -52,10 +55,10 @@ export function TokenChart({ usage }: { usage: AggregatedTokenUsage }) {
             style={{ width: `${Math.min(100, contextFill * 100)}%` }}
           />
         </div>
-        <div className="text-xs text-gray-600 mt-1">
+        <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
           {formatNum(usage.estimatedContextUsed)} / {formatNum(usage.contextWindowSize)}
           {usage.compactionCount > 0 && (
-            <span className="ml-2 text-purple-400">
+            <span className="ml-2" style={{ color: "var(--text-secondary)" }}>
               ({usage.compactionCount} compaction{usage.compactionCount !== 1 ? "s" : ""})
             </span>
           )}
@@ -65,11 +68,11 @@ export function TokenChart({ usage }: { usage: AggregatedTokenUsage }) {
       {/* By model */}
       {Object.keys(usage.byModel).length > 0 && (
         <div className="mt-4">
-          <h4 className="text-xs text-gray-500 mb-2">By Model</h4>
+          <h4 className="text-xs mb-2" style={{ color: "var(--text-muted)" }}>By Model</h4>
           {Object.entries(usage.byModel).map(([model, u]) => (
             <div key={model} className="flex justify-between text-xs py-0.5">
-              <span className="text-gray-400 truncate mr-2">{model}</span>
-              <span className="text-gray-500 shrink-0">
+              <span className="truncate mr-2" style={{ color: "var(--text-secondary)" }}>{model}</span>
+              <span className="shrink-0" style={{ color: "var(--text-muted)" }}>
                 {formatNum(u.inputTokens)} in / {formatNum(u.outputTokens)} out
               </span>
             </div>

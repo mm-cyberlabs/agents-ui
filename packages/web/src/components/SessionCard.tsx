@@ -40,14 +40,22 @@ export function SessionCard({ session, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-cyan-600 transition-colors text-left w-full"
+      className="rounded-lg p-4 transition-colors text-left w-full"
+      style={{
+        backgroundColor: "var(--bg-card)",
+        borderWidth: 1,
+        borderStyle: "solid",
+        borderColor: "var(--border-color)",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.borderColor = "var(--accent)")}
+      onMouseLeave={(e) => (e.currentTarget.style.borderColor = "var(--border-color)")}
     >
       <div className="flex items-center justify-between mb-2">
-        <h3 className="text-lg font-bold text-cyan-400 truncate">{project}</h3>
+        <h3 className="text-lg font-bold truncate" style={{ color: "var(--accent)" }}>{project}</h3>
         <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[session.status]}`} />
       </div>
 
-      <div className="text-sm text-gray-400 mb-3 space-y-1">
+      <div className="text-sm mb-3 space-y-1" style={{ color: "var(--text-secondary)" }}>
         <div className="flex justify-between">
           <span>Branch: {session.gitBranch || "-"}</span>
           <span>{timeAgo(session.lastActivityAt)}</span>
@@ -55,7 +63,7 @@ export function SessionCard({ session, onClick }: Props) {
         {session.model && <div>Model: {session.model}</div>}
       </div>
 
-      <div className="flex items-center gap-4 text-xs text-gray-500">
+      <div className="flex items-center gap-4 text-xs" style={{ color: "var(--text-muted)" }}>
         <span>{formatTokens(totalTokens)} tokens</span>
         <span>{subagentCount} agents</span>
         <span>{session.messageCount} msgs</span>
@@ -63,7 +71,7 @@ export function SessionCard({ session, onClick }: Props) {
 
       {/* Context window bar */}
       <div className="mt-3">
-        <div className="h-1 bg-gray-800 rounded-full overflow-hidden">
+        <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: "var(--border-color)" }}>
           <div
             className={`h-full rounded-full transition-all ${
               contextFill < 0.5
@@ -75,7 +83,7 @@ export function SessionCard({ session, onClick }: Props) {
             style={{ width: `${Math.min(100, contextFill * 100)}%` }}
           />
         </div>
-        <div className="text-xs text-gray-600 mt-1">
+        <div className="text-xs mt-1" style={{ color: "var(--text-muted)" }}>
           Context: {Math.round(contextFill * 100)}%
         </div>
       </div>

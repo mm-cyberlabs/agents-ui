@@ -21,9 +21,9 @@ function getEventIcon(type: ActivityEvent["type"]): { icon: string; color: strin
     case "tool_end":
       return { icon: "✓", color: "green" };
     case "subagent_start":
-      return { icon: "🔀", color: "cyan" };
+      return { icon: "🔀", color: "#E67D22" };
     case "subagent_end":
-      return { icon: "🔙", color: "cyan" };
+      return { icon: "🔙", color: "#E67D22" };
     case "compaction":
       return { icon: "📦", color: "magenta" };
     case "error":
@@ -44,7 +44,7 @@ export function ActivityFeed({ events, maxLines = 30 }: ActivityFeedProps) {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold color="cyan" >Activity Feed</Text>
+      <Text bold color="#E67D22">Activity Feed</Text>
       <Box flexDirection="column" marginTop={1}>
         {visible.map((evt) => {
           const { icon, color } = getEventIcon(evt.type);

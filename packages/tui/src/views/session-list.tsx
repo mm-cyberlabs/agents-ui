@@ -60,7 +60,7 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
 
         return (
           <Box key={session.id} gap={1} paddingX={1}>
-            <Text color={isSelected ? "cyan" : undefined} bold={isSelected}>
+            <Text color={isSelected ? "#E67D22" : undefined} bold={isSelected}>
               {isSelected ? "▸ " : "  "}
               {project.padEnd(22).slice(0, 22)}
               {(session.gitBranch || "-").padEnd(16).slice(0, 16)}

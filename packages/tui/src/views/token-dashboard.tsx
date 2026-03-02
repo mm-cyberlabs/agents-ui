@@ -29,7 +29,7 @@ export function TokenDashboard({ session }: TokenDashboardProps) {
 
   return (
     <Box flexDirection="column" padding={1}>
-      <Text bold color="cyan">Token Usage</Text>
+      <Text bold color="#E67D22">Token Usage</Text>
       <Box flexDirection="column" marginTop={1} gap={0}>
         <Text>Input tokens:    <Text bold>{formatNum(totalInput)}</Text></Text>
         <Text>Output tokens:   <Text bold>{formatNum(totalOutput)}</Text></Text>
@@ -39,7 +39,7 @@ export function TokenDashboard({ session }: TokenDashboardProps) {
       </Box>
 
       <Box marginTop={1} flexDirection="column">
-        <Text bold color="cyan">Context Window</Text>
+        <Text bold color="#E67D22">Context Window</Text>
         <ProgressBar value={contextFill} label="Fill" width={40} />
         <Text dimColor>
           {formatNum(tokenUsage.estimatedContextUsed)} / {formatNum(tokenUsage.contextWindowSize)} tokens
@@ -48,7 +48,7 @@ export function TokenDashboard({ session }: TokenDashboardProps) {
 
       {Object.keys(tokenUsage.byModel).length > 0 && (
         <Box marginTop={1} flexDirection="column">
-          <Text bold color="cyan">By Model</Text>
+          <Text bold color="#E67D22">By Model</Text>
           {Object.entries(tokenUsage.byModel).map(([model, usage]) => (
             <Text key={model}>
               <Text dimColor>{model.padEnd(28)}</Text>
