@@ -21,10 +21,10 @@ export interface TreeLayoutResult {
   height: number;
 }
 
-const CARD_W = 160;
-const CARD_H = 72;
-const H_GAP = 40;
-const V_GAP = 60;
+const CARD_W = 200;
+const CARD_H = 80;
+const H_GAP = 30;
+const V_GAP = 50;
 
 /**
  * Top-down tree layout. Returns positioned nodes/edges and the total
