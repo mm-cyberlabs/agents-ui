@@ -86,11 +86,11 @@ Two interfaces are available: a **terminal UI** (Ink/React) and a **web dashboar
 
 Claude Code writes full conversation transcripts as JSONL files to `~/.claude/projects/<encoded-project-path>/<session-id>.jsonl`. Subagent transcripts go to `<session-id>/subagents/agent-<agentId>.jsonl`. The `JsonlTail` watcher tracks byte offsets per file to efficiently tail even 100MB+ session files without re-reading.
 
-**HTTP Hooks (optional, lower latency)**
+**HTTP Hooks (configured automatically by the installer)**
 
-Claude Code supports HTTP hooks that POST JSON to a URL on lifecycle events. Running `agents-ui setup` configures these hooks in `~/.claude/settings.json` to POST to the agents-ui server. This gives near-instant event notifications while JSONL tailing fills in the complete content.
+Claude Code supports HTTP hooks that POST JSON to a URL on lifecycle events. The installer configures these hooks in `~/.claude/settings.json` to POST to the agents-ui server. This gives near-instant event notifications (tool starts, subagent spawns, session events) while JSONL tailing fills in the complete content.
 
-The system works with either or both data sources. Without hooks, you get full monitoring purely from file tailing. With hooks, you get lower-latency event notifications.
+Both data sources work together: hooks provide low-latency signals, JSONL provides full conversation context.
 
 ### Session Lifecycle
 
@@ -143,44 +143,34 @@ Clients connect to `/ws` and receive real-time updates:
 | `GET /api/sessions/:id/activity` | Get recent activity events |
 | `POST /api/hooks/:eventType` | Receive Claude Code hook events |
 
-## Installation
+## Install
 
-### Prerequisites
-
-- **Node.js** >= 20
-- **pnpm** (install via `corepack enable` or `npm install -g pnpm`)
-- **Claude Code** CLI running locally (that's what you're monitoring)
-
-### Setup
+**Prerequisites:** macOS, Node.js >= 20, Claude Code CLI
 
 ```bash
-git clone <repo-url> agents-ui
+git clone https://github.com/mm-cyberlabs/agents-ui.git
 cd agents-ui
-pnpm install
-pnpm run build
+./install.sh
 ```
 
-### Optional: Configure HTTP hooks for lower-latency monitoring
+The installer wizard will:
+
+1. Check prerequisites (Node.js, pnpm — installs pnpm via corepack if missing)
+2. Install dependencies and build all packages
+3. Configure Claude Code HTTP hooks in `~/.claude/settings.json` for low-latency monitoring
+4. Create the `agents-ui` command in your PATH
+
+That's it. No manual steps.
+
+## Usage
 
 ```bash
-# Add HTTP hook entries to ~/.claude/settings.json
-pnpm --filter @agents-ui/cli run dev -- setup
-
-# To remove hooks later:
-pnpm --filter @agents-ui/cli run dev -- teardown
+agents-ui              # Start the TUI dashboard
+agents-ui web          # Start the web dashboard (opens browser)
+agents-ui --port 9000  # Use a custom port (default: 7860)
 ```
 
-## Running
-
-### Terminal UI (TUI)
-
-Start the monitoring server and open the terminal dashboard:
-
-```bash
-pnpm --filter @agents-ui/cli run dev
-```
-
-This starts the Fastify server on port 7860 and renders the Ink TUI in your terminal.
+Open a Claude Code session in another terminal and watch your agents appear in real-time.
 
 **TUI keyboard shortcuts:**
 
@@ -191,35 +181,16 @@ This starts the Fastify server on port 7860 and renders the Ink TUI in your term
 | `↑` `↓` | Select session in the list |
 | `q` / `Ctrl+C` | Quit |
 
-### Web UI
-
-Start the server and open the web dashboard in your browser:
+## Uninstall
 
 ```bash
-pnpm --filter @agents-ui/cli run dev -- web
+agents-ui uninstall
 ```
 
-This starts the Fastify server and opens `http://127.0.0.1:7860` in your default browser.
-
-For web development with hot reload, run the server and Vite dev server separately:
-
-```bash
-# Terminal 1: Start the backend server
-pnpm --filter @agents-ui/cli run dev -- web
-
-# Terminal 2: Start Vite dev server (proxies /api and /ws to port 7860)
-pnpm --filter @agents-ui/web run dev
-```
-
-### Custom port
-
-All commands accept `-p` / `--port` to change the server port (default: 7860):
-
-```bash
-pnpm --filter @agents-ui/cli run dev -- --port 9000
-pnpm --filter @agents-ui/cli run dev -- web --port 9000
-pnpm --filter @agents-ui/cli run dev -- setup --port 9000
-```
+This will:
+1. Remove Claude Code hooks from `~/.claude/settings.json`
+2. Remove the `agents-ui` command from your PATH
+3. Optionally delete the repo directory
 
 ## Development
 
