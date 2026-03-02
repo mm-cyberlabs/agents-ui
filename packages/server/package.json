@@ -11,9 +11,10 @@
   },
   "dependencies": {
     "@agents-ui/core": "workspace:*",
-    "eventemitter3": "^5.0.0",
-    "fastify": "^5.0.0",
+    "@fastify/cors": "^10.0.0",
+    "@fastify/static": "^9.0.0",
     "@fastify/websocket": "^11.0.0",
-    "@fastify/cors": "^10.0.0"
+    "eventemitter3": "^5.0.0",
+    "fastify": "^5.0.0"
   }
 }
