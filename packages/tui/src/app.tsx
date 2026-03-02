@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Box, Text, useInput, useStdout } from "ink";
+import { Box, Text, useInput, useStdout, useApp } from "ink";
 import type { Session, ActivityEvent } from "@agents-ui/core";
 import { useWs } from "./hooks/use-ws.js";
 import { TabBar } from "./components/tab-bar.js";
@@ -45,7 +45,15 @@ export function App({ serverUrl }: AppProps) {
     setAgentScroll(0);
   }
 
+  const { exit } = useApp();
+
   useInput((input, key) => {
+    // Quit
+    if (input === "q") {
+      exit();
+      return;
+    }
+
     // Tab switching with number keys
     const num = parseInt(input, 10);
     if (num >= 1 && num <= TABS.length) {
