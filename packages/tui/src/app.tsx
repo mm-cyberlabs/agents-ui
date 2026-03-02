@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { Box, Text, useInput } from "ink";
+import { Box, Text, useInput, useStdout } from "ink";
 import type { Session, ActivityEvent } from "@agents-ui/core";
 import { useWs } from "./hooks/use-ws.js";
 import { TabBar } from "./components/tab-bar.js";
 import { SessionList } from "./views/session-list.js";
-import { AgentTreeView } from "./views/agent-tree-view.js";
+import { AgentTreeView, getMaxScroll } from "./views/agent-tree-view.js";
 import { ActivityFeed } from "./views/activity-feed.js";
 import { TokenDashboard } from "./views/token-dashboard.js";
 
@@ -18,6 +18,9 @@ export function App({ serverUrl }: AppProps) {
   const { sessions, activity, connected } = useWs(serverUrl);
   const [activeTab, setActiveTab] = useState(0);
   const [selectedSession, setSelectedSession] = useState(0);
+  const [agentScroll, setAgentScroll] = useState(0);
+  const { stdout } = useStdout();
+  const termRows = stdout?.rows ?? 40;
 
   const sessionList = useMemo(
     () => Array.from(sessions.values()).sort((a, b) =>
@@ -34,6 +37,14 @@ export function App({ serverUrl }: AppProps) {
     return activity.filter((e) => e.sessionId === currentSession.id);
   }, [activity, currentSession]);
 
+  // Reset agent scroll when session changes
+  const currentSessionId = currentSession?.id;
+  const [lastSessionId, setLastSessionId] = useState<string | undefined>();
+  if (currentSessionId !== lastSessionId) {
+    setLastSessionId(currentSessionId);
+    setAgentScroll(0);
+  }
+
   useInput((input, key) => {
     // Tab switching with number keys
     const num = parseInt(input, 10);
@@ -42,12 +53,23 @@ export function App({ serverUrl }: AppProps) {
       return;
     }
 
-    // Navigation
+    // Up/down behavior depends on active tab
     if (key.upArrow) {
-      setSelectedSession((prev) => Math.max(0, prev - 1));
+      if (activeTab === 0) {
+        // Sessions tab: select session
+        setSelectedSession((prev) => Math.max(0, prev - 1));
+      } else if (activeTab === 1) {
+        // Agents tab: scroll tree
+        setAgentScroll((prev) => Math.max(0, prev - 1));
+      }
     }
     if (key.downArrow) {
-      setSelectedSession((prev) => Math.min(sessionList.length - 1, prev + 1));
+      if (activeTab === 0) {
+        setSelectedSession((prev) => Math.min(sessionList.length - 1, prev + 1));
+      } else if (activeTab === 1) {
+        const max = getMaxScroll(currentSession, termRows);
+        setAgentScroll((prev) => Math.min(max, prev + 1));
+      }
     }
 
     // Tab with left/right
@@ -76,7 +98,9 @@ export function App({ serverUrl }: AppProps) {
         {activeTab === 0 && (
           <SessionList sessions={sessionList} selectedIndex={selectedSession} />
         )}
-        {activeTab === 1 && <AgentTreeView session={currentSession} />}
+        {activeTab === 1 && (
+          <AgentTreeView session={currentSession} scrollOffset={agentScroll} />
+        )}
         {activeTab === 2 && <ActivityFeed events={sessionActivity} />}
         {activeTab === 3 && <TokenDashboard session={currentSession} />}
       </Box>
@@ -84,7 +108,7 @@ export function App({ serverUrl }: AppProps) {
       {/* Footer */}
       <Box paddingX={1} borderStyle="single" borderTop borderColor="gray">
         <Text dimColor>
-          ↑↓ select session  ←→ switch tab  1-4 jump to tab  q quit
+          ↑↓ {activeTab === 0 ? "select session" : activeTab === 1 ? "scroll agents" : "scroll"}  ←→ switch tab  1-4 jump to tab  q quit
         </Text>
       </Box>
     </Box>

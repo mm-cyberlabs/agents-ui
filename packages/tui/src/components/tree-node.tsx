@@ -1,39 +1,48 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { AgentNode } from "@agents-ui/core";
-import { AgentBox } from "./agent-box.js";
+import { AgentRow } from "./agent-box.js";
 
-interface TreeNodeProps {
+/**
+ * Flattened tree entry for scrollable display.
+ */
+export interface FlatAgent {
   node: AgentNode;
-  depth?: number;
-  isLast?: boolean;
-  prefix?: string;
+  depth: number;
+  prefix: string;     // tree-drawing prefix (│   , etc.)
+  connector: string;  // ├── or └──
 }
 
-export function TreeNodeView({
-  node,
+/**
+ * Flatten the agent tree into a list with tree-drawing prefixes.
+ */
+export function flattenTree(
+  node: AgentNode,
   depth = 0,
-  isLast = true,
   prefix = "",
-}: TreeNodeProps) {
-  const connector = depth === 0 ? "" : isLast ? "└── " : "├── ";
-  const childPrefix = depth === 0 ? "" : prefix + (isLast ? "    " : "│   ");
+  isLast = true,
+): FlatAgent[] {
+  const connector = depth === 0 ? "" : isLast ? "└─ " : "├─ ";
+  const childPrefix = depth === 0 ? "" : prefix + (isLast ? "   " : "│  ");
+  const result: FlatAgent[] = [{ node, depth, prefix, connector }];
 
+  node.children.forEach((child, i) => {
+    result.push(
+      ...flattenTree(child, depth + 1, childPrefix, i === node.children.length - 1),
+    );
+  });
+
+  return result;
+}
+
+/**
+ * Render a single flat agent row with its tree connector.
+ */
+export function FlatAgentRow({ entry, selected }: { entry: FlatAgent; selected?: boolean }) {
   return (
-    <Box flexDirection="column">
-      <Box>
-        {depth > 0 && <Text dimColor>{prefix}{connector}</Text>}
-        <AgentBox node={node} />
-      </Box>
-      {node.children.map((child, i) => (
-        <TreeNodeView
-          key={child.agentId}
-          node={child}
-          depth={depth + 1}
-          isLast={i === node.children.length - 1}
-          prefix={childPrefix}
-        />
-      ))}
+    <Box>
+      {entry.depth > 0 && <Text dimColor>{entry.prefix}{entry.connector}</Text>}
+      <AgentRow node={entry.node} selected={selected} />
     </Box>
   );
 }
