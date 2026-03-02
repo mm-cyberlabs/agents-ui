@@ -1,0 +1,22 @@
+{
+  "name": "agents-ui",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r run build",
+    "dev": "pnpm --filter @agents-ui/cli run dev",
+    "start": "pnpm --filter @agents-ui/cli run start",
+    "test": "vitest run",
+    "lint": "tsc --noEmit -p tsconfig.base.json"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "tsx": "^4.19.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

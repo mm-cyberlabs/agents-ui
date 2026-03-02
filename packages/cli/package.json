@@ -1,0 +1,20 @@
+{
+  "name": "@agents-ui/cli",
+  "version": "0.1.0",
+  "type": "module",
+  "bin": {
+    "agents-ui": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsx src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@agents-ui/core": "workspace:*",
+    "@agents-ui/server": "workspace:*",
+    "@agents-ui/tui": "workspace:*",
+    "commander": "^13.0.0",
+    "open": "^10.1.0"
+  }
+}
