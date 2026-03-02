@@ -2,7 +2,7 @@ import React from "react";
 import { render } from "ink";
 import { App } from "./app.js";
 
-export function startTui(serverUrl = "ws://127.0.0.1:7860/ws") {
+export function startTui(serverUrl = "ws://127.0.0.1:47860/ws") {
   const { unmount, waitUntilExit } = render(<App serverUrl={serverUrl} />);
 
   // Handle quit

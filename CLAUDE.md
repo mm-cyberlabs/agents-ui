@@ -50,4 +50,4 @@ Claude Code sessions → JSONL files + HTTP hooks → server (SessionStore) → 
 - The `AgentTreeBuilder` (core/parsers/) detects subagent spawning by finding `tool_use` blocks with `name: "Agent"` or `name: "Task"`, and correlates completions via `toolUseResult.agentId` on user messages.
 - `JsonlTail` tracks byte offset per file to avoid re-reading large files (sessions can be 100MB+).
 - Session lifecycle: `active` → `idle` (60s no writes) → `completed` (5min or SessionEnd hook).
-- Server port defaults to 7860.
+- Server port defaults to 47860.

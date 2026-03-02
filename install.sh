@@ -19,7 +19,7 @@ step()    { echo -e "\n${BOLD}[$1/$TOTAL_STEPS] $2${RESET}"; }
 
 TOTAL_STEPS=5
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PORT="${AGENTS_UI_PORT:-7860}"
+PORT="${AGENTS_UI_PORT:-47860}"
 INSTALL_DIR="/usr/local/bin"
 
 # ─── Banner ───────────────────────────────────────────────────────────────────

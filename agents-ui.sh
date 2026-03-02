@@ -19,7 +19,7 @@ while [[ -L "$SOURCE" ]]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 
-PORT="${AGENTS_UI_PORT:-7860}"
+PORT="${AGENTS_UI_PORT:-47860}"
 
 # ─── Parse arguments ─────────────────────────────────────────────────────────
 COMMAND="${1:-start}"
@@ -153,7 +153,7 @@ cmd_help() {
     echo ""
     echo -e "  ${BOLD}Options:${RESET}"
     echo ""
-    echo -e "    ${CYAN}-p, --port <port>${RESET}         Server port (default: 7860)"
+    echo -e "    ${CYAN}-p, --port <port>${RESET}         Server port (default: 47860)"
     echo ""
     echo -e "  ${BOLD}Environment:${RESET}"
     echo ""

@@ -21,7 +21,7 @@ function buildHookUrl(baseUrl: string, event: string): string {
  * Add HTTP hook configuration to ~/.claude/settings.json.
  * Preserves existing hooks and settings.
  */
-export async function installHooks(port = 7860): Promise<void> {
+export async function installHooks(port = 47860): Promise<void> {
   const settingsPath = getSettingsPath();
   const baseUrl = `http://localhost:${port}`;
 
@@ -63,7 +63,7 @@ export async function installHooks(port = 7860): Promise<void> {
 /**
  * Remove agents-ui HTTP hooks from ~/.claude/settings.json.
  */
-export async function removeHooks(port = 7860): Promise<void> {
+export async function removeHooks(port = 47860): Promise<void> {
   const settingsPath = getSettingsPath();
   const baseUrl = `http://localhost:${port}`;
 

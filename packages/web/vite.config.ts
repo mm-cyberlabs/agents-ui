@@ -5,9 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": "http://127.0.0.1:7860",
+      "/api": "http://127.0.0.1:47860",
       "/ws": {
-        target: "ws://127.0.0.1:7860",
+        target: "ws://127.0.0.1:47860",
         ws: true,
       },
     },

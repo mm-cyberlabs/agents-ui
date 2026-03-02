@@ -12,7 +12,7 @@ const program = new Command()
 program
   .command("start", { isDefault: true })
   .description("Start the monitoring server and TUI")
-  .option("-p, --port <port>", "Server port", "7860")
+  .option("-p, --port <port>", "Server port", "47860")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     console.log(`Starting agents-ui server on port ${port}...`);
@@ -31,7 +31,7 @@ program
 program
   .command("web")
   .description("Start the monitoring server and open the web UI")
-  .option("-p, --port <port>", "Server port", "7860")
+  .option("-p, --port <port>", "Server port", "47860")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     console.log(`Starting agents-ui server on port ${port}...`);
@@ -50,7 +50,7 @@ program
 program
   .command("setup")
   .description("Configure Claude Code HTTP hooks for real-time monitoring")
-  .option("-p, --port <port>", "Server port", "7860")
+  .option("-p, --port <port>", "Server port", "47860")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     await installHooks(port);
@@ -62,7 +62,7 @@ program
 program
   .command("teardown")
   .description("Remove Claude Code HTTP hooks")
-  .option("-p, --port <port>", "Server port", "7860")
+  .option("-p, --port <port>", "Server port", "47860")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     await removeHooks(port);
