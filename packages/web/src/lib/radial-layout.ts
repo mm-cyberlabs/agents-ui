@@ -14,55 +14,74 @@ export interface PositionedEdge {
   targetNode: AgentNode;
 }
 
-export function computeRadialLayout(
-  root: AgentNode,
-  width: number,
-  height: number,
-): { nodes: PositionedNode[]; edges: PositionedEdge[] } {
-  const h = hierarchy(root, (d) => d.children);
-  const radius = Math.min(width, height) / 2 - 80;
+export interface TreeLayoutResult {
+  nodes: PositionedNode[];
+  edges: PositionedEdge[];
+  width: number;
+  height: number;
+}
 
-  // Single node — just place at center
-  if (h.descendants().length === 1) {
+const CARD_W = 160;
+const CARD_H = 72;
+const H_GAP = 40;
+const V_GAP = 60;
+
+/**
+ * Top-down tree layout. Returns positioned nodes/edges and the total
+ * bounding box so the SVG can size itself to fit all content.
+ */
+export function computeTreeLayout(root: AgentNode): TreeLayoutResult {
+  const h = hierarchy(root, (d) => d.children);
+  const nodeCount = h.descendants().length;
+
+  if (nodeCount === 1) {
+    const pad = 40;
     return {
-      nodes: [{ node: root, x: width / 2, y: height / 2 }],
+      nodes: [{ node: root, x: pad + CARD_W / 2, y: pad + CARD_H / 2 }],
       edges: [],
+      width: CARD_W + pad * 2,
+      height: CARD_H + pad * 2,
     };
   }
 
+  // d3.tree lays out in a unit space: x = horizontal spread, y = depth
   const treeLayout = tree<AgentNode>()
-    .size([2 * Math.PI, Math.max(radius, 60)])
-    .separation((a, b) => (a.parent === b.parent ? 1 : 2) / (a.depth || 1));
+    .nodeSize([CARD_W + H_GAP, CARD_H + V_GAP])
+    .separation(() => 1);
 
   const treeData = treeLayout(h);
-  const cx = width / 2;
-  const cy = height / 2;
+  const allDescendants = treeData.descendants();
 
-  const nodes: PositionedNode[] = treeData.descendants().map((d) => {
-    // Root goes to center, children project radially
-    if (d.depth === 0) {
-      return { node: d.data, x: cx, y: cy };
-    }
-    return {
-      node: d.data,
-      x: d.y * Math.cos(d.x - Math.PI / 2) + cx,
-      y: d.y * Math.sin(d.x - Math.PI / 2) + cy,
-    };
-  });
+  // Find bounding box of all nodes
+  let minX = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const d of allDescendants) {
+    if (d.x - CARD_W / 2 < minX) minX = d.x - CARD_W / 2;
+    if (d.x + CARD_W / 2 > maxX) maxX = d.x + CARD_W / 2;
+    if (d.y + CARD_H / 2 > maxY) maxY = d.y + CARD_H / 2;
+  }
 
-  const edges: PositionedEdge[] = treeData.links().map((link) => {
-    const sx = link.source.depth === 0 ? cx : link.source.y * Math.cos(link.source.x - Math.PI / 2) + cx;
-    const sy = link.source.depth === 0 ? cy : link.source.y * Math.sin(link.source.x - Math.PI / 2) + cy;
-    const tx = link.target.y * Math.cos(link.target.x - Math.PI / 2) + cx;
-    const ty = link.target.y * Math.sin(link.target.x - Math.PI / 2) + cy;
+  const padX = 30;
+  const padY = 30;
+  const offsetX = -minX + padX;
+  const totalWidth = maxX - minX + padX * 2;
+  const totalHeight = maxY + padY * 2 + CARD_H / 2;
 
-    return {
-      source: { x: sx, y: sy },
-      target: { x: tx, y: ty },
-      sourceNode: link.source.data,
-      targetNode: link.target.data,
-    };
-  });
+  const nodes: PositionedNode[] = allDescendants.map((d) => ({
+    node: d.data,
+    x: d.x + offsetX,
+    y: d.y + padY,
+  }));
 
-  return { nodes, edges };
+  const edges: PositionedEdge[] = treeData.links().map((link) => ({
+    source: { x: link.source.x + offsetX, y: link.source.y + padY },
+    target: { x: link.target.x + offsetX, y: link.target.y + padY },
+    sourceNode: link.source.data,
+    targetNode: link.target.data,
+  }));
+
+  return { nodes, edges, width: totalWidth, height: totalHeight };
 }
+
+export { CARD_W, CARD_H };

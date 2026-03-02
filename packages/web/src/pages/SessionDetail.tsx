@@ -67,17 +67,14 @@ export function SessionDetail({ sessions, activity }: Props) {
         </div>
       </div>
 
-      {/* Main content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        {/* Left: Agent tree */}
-        <div className="lg:col-span-1">
-          <AgentTree root={session.agentTree} />
-          <div className="mt-4">
-            <TokenChart usage={session.tokenUsage} />
-          </div>
-        </div>
+      {/* Agent map — full width */}
+      <AgentTree root={session.agentTree} />
 
-        {/* Right: Activity stream */}
+      {/* Token chart + Activity stream below */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mt-4">
+        <div className="lg:col-span-1">
+          <TokenChart usage={session.tokenUsage} />
+        </div>
         <div className="lg:col-span-2">
           <ActivityStream events={sessionActivity} />
         </div>
