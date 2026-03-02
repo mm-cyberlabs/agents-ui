@@ -49,5 +49,18 @@ Claude Code sessions → JSONL files + HTTP hooks → server (SessionStore) → 
 
 - The `AgentTreeBuilder` (core/parsers/) detects subagent spawning by finding `tool_use` blocks with `name: "Agent"` or `name: "Task"`, and correlates completions via `toolUseResult.agentId` on user messages.
 - `JsonlTail` tracks byte offset per file to avoid re-reading large files (sessions can be 100MB+).
-- Session lifecycle: `active` → `idle` (60s no writes) → `completed` (5min or SessionEnd hook).
+- Session lifecycle: `active` → `idle` (60s no writes) → `completed` (5min or SessionEnd hook). Only active and idle sessions are shown in both TUI and web; completed sessions are filtered out.
 - Server port defaults to 47860.
+
+### TUI Features
+
+- **Session list**: Shows active/idle sessions sorted by last activity, with selection cursor.
+- **Agent tree**: Selectable agent list (up/down arrows) with a detail panel on the right showing status, model, tokens, context %, tools, prompt.
+- **Activity feed**: Per-session activity events.
+- **Token dashboard**: Token usage breakdown for selected session.
+
+### Web Dashboard Features
+
+- **Multi-project grouping**: Sessions grouped by project with aggregate stats (tokens, agents, active count).
+- **Agent map**: Interactive SVG tree with zoom/pan, status filter buttons (All/Running/Completed/Error), particle animations on running edges, and click-to-open detail modal.
+- **Session detail**: Agent map + token chart + activity stream for a single session.

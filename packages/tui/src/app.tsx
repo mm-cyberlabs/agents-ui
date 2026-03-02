@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { Box, Text, useInput, useStdout, useApp } from "ink";
+import { Box, Text, useInput, useApp } from "ink";
 import type { Session, ActivityEvent } from "@agents-ui/core";
 import { useWs } from "./hooks/use-ws.js";
 import { TabBar } from "./components/tab-bar.js";
 import { SessionList } from "./views/session-list.js";
-import { AgentTreeView, getMaxScroll } from "./views/agent-tree-view.js";
+import { AgentTreeView, getAgentCount } from "./views/agent-tree-view.js";
 import { ActivityFeed } from "./views/activity-feed.js";
 import { TokenDashboard } from "./views/token-dashboard.js";
 
@@ -18,14 +18,14 @@ export function App({ serverUrl }: AppProps) {
   const { sessions, activity, connected } = useWs(serverUrl);
   const [activeTab, setActiveTab] = useState(0);
   const [selectedSession, setSelectedSession] = useState(0);
-  const [agentScroll, setAgentScroll] = useState(0);
-  const { stdout } = useStdout();
-  const termRows = stdout?.rows ?? 40;
+  const [selectedAgent, setSelectedAgent] = useState(0);
 
   const sessionList = useMemo(
-    () => Array.from(sessions.values()).sort((a, b) =>
-      new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime()
-    ),
+    () => Array.from(sessions.values())
+      .filter((s) => s.status !== "completed")
+      .sort((a, b) =>
+        new Date(b.lastActivityAt).getTime() - new Date(a.lastActivityAt).getTime()
+      ),
     [sessions],
   );
 
@@ -37,12 +37,12 @@ export function App({ serverUrl }: AppProps) {
     return activity.filter((e) => e.sessionId === currentSession.id);
   }, [activity, currentSession]);
 
-  // Reset agent scroll when session changes
+  // Reset agent selection when session changes
   const currentSessionId = currentSession?.id;
   const [lastSessionId, setLastSessionId] = useState<string | undefined>();
   if (currentSessionId !== lastSessionId) {
     setLastSessionId(currentSessionId);
-    setAgentScroll(0);
+    setSelectedAgent(0);
   }
 
   const { exit } = useApp();
@@ -64,19 +64,17 @@ export function App({ serverUrl }: AppProps) {
     // Up/down behavior depends on active tab
     if (key.upArrow) {
       if (activeTab === 0) {
-        // Sessions tab: select session
         setSelectedSession((prev) => Math.max(0, prev - 1));
       } else if (activeTab === 1) {
-        // Agents tab: scroll tree
-        setAgentScroll((prev) => Math.max(0, prev - 1));
+        setSelectedAgent((prev) => Math.max(0, prev - 1));
       }
     }
     if (key.downArrow) {
       if (activeTab === 0) {
         setSelectedSession((prev) => Math.min(sessionList.length - 1, prev + 1));
       } else if (activeTab === 1) {
-        const max = getMaxScroll(currentSession, termRows);
-        setAgentScroll((prev) => Math.min(max, prev + 1));
+        const max = getAgentCount(currentSession) - 1;
+        setSelectedAgent((prev) => Math.min(max, prev + 1));
       }
     }
 
@@ -107,7 +105,7 @@ export function App({ serverUrl }: AppProps) {
           <SessionList sessions={sessionList} selectedIndex={selectedSession} />
         )}
         {activeTab === 1 && (
-          <AgentTreeView session={currentSession} scrollOffset={agentScroll} />
+          <AgentTreeView session={currentSession} selectedIndex={selectedAgent} />
         )}
         {activeTab === 2 && <ActivityFeed events={sessionActivity} />}
         {activeTab === 3 && <TokenDashboard session={currentSession} />}
@@ -116,7 +114,7 @@ export function App({ serverUrl }: AppProps) {
       {/* Footer */}
       <Box paddingX={1} borderStyle="single" borderTop borderColor="gray">
         <Text dimColor>
-          ↑↓ {activeTab === 0 ? "select session" : activeTab === 1 ? "scroll agents" : "scroll"}  ←→ switch tab  1-4 jump to tab  q quit
+          ↑↓ {activeTab === 0 ? "select session" : activeTab === 1 ? "select agent" : "scroll"}  ←→ switch tab  1-4 jump to tab  q quit
         </Text>
       </Box>
     </Box>

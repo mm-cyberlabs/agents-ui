@@ -1,7 +1,20 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Session } from "@agents-ui/core/browser";
+import { getProjectDisplayName } from "@agents-ui/core/browser";
 import { SessionCard } from "../components/SessionCard.js";
+
+function formatTokens(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return String(n);
+}
+
+function countAgents(session: Session): number {
+  const walk = (node: Session["agentTree"]): number =>
+    1 + node.children.reduce((sum, c) => sum + walk(c), 0);
+  return walk(session.agentTree);
+}
 
 interface Props {
   sessions: Map<string, Session>;
@@ -11,19 +24,37 @@ interface Props {
 export function Dashboard({ sessions, connected }: Props) {
   const sorted = useMemo(
     () =>
-      Array.from(sessions.values()).sort(
-        (a, b) =>
-          new Date(b.lastActivityAt).getTime() -
-          new Date(a.lastActivityAt).getTime(),
-      ),
+      Array.from(sessions.values())
+        .filter((s) => s.status !== "completed")
+        .sort(
+          (a, b) =>
+            new Date(b.lastActivityAt).getTime() -
+            new Date(a.lastActivityAt).getTime(),
+        ),
     [sessions],
   );
 
   const navigate = useNavigate();
 
-  const active = sorted.filter((s) => s.status === "active");
-  const idle = sorted.filter((s) => s.status === "idle");
-  const completed = sorted.filter((s) => s.status === "completed");
+  const projectGroups = useMemo(() => {
+    const map = new Map<string, Session[]>();
+    for (const s of sorted) {
+      let group = map.get(s.projectDir);
+      if (!group) {
+        group = [];
+        map.set(s.projectDir, group);
+      }
+      group.push(s);
+    }
+    // Sort groups by most recent activity
+    return Array.from(map.entries())
+      .map(([projectDir, groupSessions]) => ({ projectDir, sessions: groupSessions }))
+      .sort(
+        (a, b) =>
+          new Date(b.sessions[0].lastActivityAt).getTime() -
+          new Date(a.sessions[0].lastActivityAt).getTime(),
+      );
+  }, [sorted]);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -56,62 +87,54 @@ export function Dashboard({ sessions, connected }: Props) {
         </div>
       ) : (
         <div className="space-y-8">
-          {active.length > 0 && (
-            <Section title="Active" count={active.length}>
-              {active.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  session={s}
-                  onClick={() => navigate(`/session/${s.id}`)}
-                />
-              ))}
-            </Section>
-          )}
-          {idle.length > 0 && (
-            <Section title="Idle" count={idle.length}>
-              {idle.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  session={s}
-                  onClick={() => navigate(`/session/${s.id}`)}
-                />
-              ))}
-            </Section>
-          )}
-          {completed.length > 0 && (
-            <Section title="Completed" count={completed.length}>
-              {completed.map((s) => (
-                <SessionCard
-                  key={s.id}
-                  session={s}
-                  onClick={() => navigate(`/session/${s.id}`)}
-                />
-              ))}
-            </Section>
-          )}
+          {projectGroups.map((group) => {
+            const totalTokens = group.sessions.reduce(
+              (sum, s) =>
+                sum + s.tokenUsage.totalInputTokens + s.tokenUsage.totalOutputTokens,
+              0,
+            );
+            const totalAgents = group.sessions.reduce(
+              (sum, s) => sum + countAgents(s),
+              0,
+            );
+            const activeCount = group.sessions.filter(
+              (s) => s.status === "active",
+            ).length;
+
+            return (
+              <div key={group.projectDir}>
+                <div className="flex items-center justify-between mb-3">
+                  <h2 className="text-sm font-bold text-cyan-400 uppercase tracking-wider">
+                    {getProjectDisplayName(group.projectDir)}
+                    <span className="text-gray-500 ml-2">
+                      ({group.sessions.length} session
+                      {group.sessions.length !== 1 ? "s" : ""})
+                    </span>
+                  </h2>
+                  <div className="flex gap-4 text-xs text-gray-500">
+                    {activeCount > 0 && (
+                      <span className="text-green-400">
+                        {activeCount} active
+                      </span>
+                    )}
+                    <span>{formatTokens(totalTokens)} tokens</span>
+                    <span>{totalAgents} agent{totalAgents !== 1 ? "s" : ""}</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {group.sessions.map((s) => (
+                    <SessionCard
+                      key={s.id}
+                      session={s}
+                      onClick={() => navigate(`/session/${s.id}`)}
+                    />
+                  ))}
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
-    </div>
-  );
-}
-
-function Section({
-  title,
-  count,
-  children,
-}: {
-  title: string;
-  count: number;
-  children: React.ReactNode;
-}) {
-  return (
-    <div>
-      <h2 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-3">
-        {title} ({count})
-      </h2>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {children}
-      </div>
     </div>
   );
 }

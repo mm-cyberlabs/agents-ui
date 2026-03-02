@@ -33,7 +33,7 @@ export function AgentRow({ node, selected }: { node: AgentNode; selected?: boole
   return (
     <Box flexDirection="column">
       <Box gap={1}>
-        <Text color={statusColor} bold>{statusIcon}</Text>
+        <Text color={selected ? "cyan" : statusColor} bold>{selected ? "▸" : statusIcon}</Text>
         <Text color={selected ? "cyan" : statusColor} bold>{label}</Text>
         {node.model && <Text dimColor>({node.model})</Text>}
         {node.currentTool && <Text color="yellow"> → {node.currentTool}</Text>}

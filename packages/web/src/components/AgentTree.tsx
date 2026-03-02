@@ -21,6 +21,8 @@ function formatTokens(n: number): string {
   return String(n);
 }
 
+type StatusFilter = "all" | "running" | "completed" | "error";
+
 function TreeEdge({ edge }: { edge: PositionedEdge }) {
   const { source, target, targetNode } = edge;
   const isRunning = targetNode.status === "running";
@@ -35,21 +37,19 @@ function TreeEdge({ edge }: { edge: PositionedEdge }) {
     <g>
       <path d={d} stroke="#374151" strokeWidth={1.5} fill="none" />
       {isRunning && (
-        <path
-          d={d}
-          stroke="#22c55e"
-          strokeWidth={1.5}
-          fill="none"
-          strokeDasharray="4 8"
-        >
-          <animate
-            attributeName="stroke-dashoffset"
-            from="12"
-            to="0"
-            dur="0.8s"
-            repeatCount="indefinite"
-          />
-        </path>
+        <>
+          <path d={d} stroke="#22c55e" strokeWidth={2} fill="none" opacity={0.3} />
+          {[0, 0.33, 0.66].map((offset, i) => (
+            <circle key={i} r={3} fill="#22c55e" opacity={0.8}>
+              <animateMotion
+                dur="1.5s"
+                repeatCount="indefinite"
+                begin={`${offset * 1.5}s`}
+                path={d}
+              />
+            </circle>
+          ))}
+        </>
       )}
     </g>
   );
@@ -62,7 +62,7 @@ function TreeNode({
 }: {
   positioned: PositionedNode;
   index: number;
-  onClick: (node: AgentNode) => void;
+  onClick: (node: AgentNode, x: number, y: number) => void;
 }) {
   const { node, x, y } = positioned;
   const s = STATUS[node.status];
@@ -78,7 +78,7 @@ function TreeNode({
       transform={`translate(${x - hw}, ${y - hh})`}
       onClick={(e) => {
         e.stopPropagation();
-        onClick(node);
+        onClick(node, x, y);
       }}
       style={{ cursor: "pointer" }}
     >
@@ -109,7 +109,7 @@ function TreeNode({
         </rect>
       )}
 
-      {/* Hover highlight — invisible rect that becomes visible on hover via CSS */}
+      {/* Hover highlight */}
       <rect
         width={CARD_W}
         height={CARD_H}
@@ -170,6 +170,7 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
   const [transform, setTransform] = useState<{ scale: number; x: number; y: number } | null>(null);
   const [dragging, setDragging] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentNode | null>(null);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const dragStart = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
   const didDrag = useRef(false);
 
@@ -179,6 +180,37 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
   );
 
   const viewH = Math.max(500, Math.min(treeH + 60, 700));
+
+  // Status counts for filter buttons
+  const statusCounts = useMemo(() => {
+    const counts = { running: 0, completed: 0, error: 0 };
+    const walk = (n: AgentNode) => {
+      counts[n.status]++;
+      n.children.forEach(walk);
+    };
+    walk(root);
+    return counts;
+  }, [root]);
+
+  // Filter nodes and edges by status
+  const filteredNodes = useMemo(() => {
+    if (statusFilter === "all") return nodes;
+    const matchingIds = new Set<string>();
+    const walk = (n: AgentNode) => {
+      if (n.status === statusFilter) matchingIds.add(n.agentId);
+      n.children.forEach(walk);
+    };
+    walk(root);
+    return nodes.filter((n) => matchingIds.has(n.node.agentId));
+  }, [nodes, root, statusFilter]);
+
+  const filteredEdges = useMemo(() => {
+    if (statusFilter === "all") return edges;
+    const visibleIds = new Set(filteredNodes.map((n) => n.node.agentId));
+    return edges.filter(
+      (e) => visibleIds.has(e.sourceNode.agentId) && visibleIds.has(e.targetNode.agentId),
+    );
+  }, [edges, filteredNodes, statusFilter]);
 
   // Measure container
   useEffect(() => {
@@ -253,13 +285,13 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
 
   const onPointerUp = useCallback(() => setDragging(false), []);
 
-  const handleNodeClick = useCallback((node: AgentNode) => {
-    // Only open modal if the user didn't drag
-    if (!didDrag.current) {
-      // Find the latest version of this node in the current tree
+  const handleNodeClick = useCallback(
+    (node: AgentNode, _nodeX: number, _nodeY: number) => {
+      if (didDrag.current) return;
       setSelectedAgent(node);
-    }
-  }, []);
+    },
+    [],
+  );
 
   // Keep selected agent updated with latest data from tree
   const currentSelectedAgent = useMemo(() => {
@@ -277,15 +309,46 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
 
   const subCount = root.children.length;
   const t = transform ?? { scale: 1, x: 0, y: 0 };
+  const totalAll = statusCounts.running + statusCounts.completed + statusCounts.error;
 
   const btnClass =
     "w-8 h-8 flex items-center justify-center rounded bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white text-sm font-mono transition-colors";
 
+  const filterButtons: { key: StatusFilter; label: string; count: number }[] = [
+    { key: "all", label: "All", count: totalAll },
+    { key: "running", label: "Running", count: statusCounts.running },
+    { key: "completed", label: "Completed", count: statusCounts.completed },
+    { key: "error", label: "Error", count: statusCounts.error },
+  ];
+
   return (
     <div ref={containerRef} className="bg-gray-900 rounded-lg p-4 border border-gray-800 w-full relative">
-      <h3 className="text-sm font-bold text-cyan-400 mb-2">
-        Agent Map ({subCount} subagent{subCount !== 1 ? "s" : ""})
-      </h3>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-bold text-cyan-400">
+          Agent Map ({subCount} subagent{subCount !== 1 ? "s" : ""})
+        </h3>
+
+        {/* Status filter buttons */}
+        <div className="flex gap-1.5">
+          {filterButtons.map((f) => {
+            if (f.key !== "all" && f.count === 0) return null;
+            const isActive = statusFilter === f.key;
+            return (
+              <button
+                key={f.key}
+                onClick={() => setStatusFilter(f.key)}
+                className={`px-2 py-0.5 text-xs rounded border transition-colors ${
+                  isActive
+                    ? "bg-cyan-500/20 border-cyan-500/40 text-cyan-400"
+                    : "bg-gray-800 border-gray-700 text-gray-500 hover:text-gray-300"
+                }`}
+              >
+                {f.label} ({f.count})
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Zoom controls */}
       <div className="absolute bottom-6 right-6 flex flex-col gap-1 z-10">
@@ -307,10 +370,10 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
           style={{ cursor: dragging ? "grabbing" : "grab", userSelect: "none" }}
         >
           <g transform={`translate(${t.x}, ${t.y}) scale(${t.scale})`}>
-            {edges.map((edge, i) => (
+            {filteredEdges.map((edge, i) => (
               <TreeEdge key={i} edge={edge} />
             ))}
-            {nodes.map((n, i) => (
+            {filteredNodes.map((n, i) => (
               <TreeNode
                 key={n.node.agentId}
                 positioned={n}
