@@ -129,8 +129,16 @@ export class AgentTreeBuilder {
           agent.durationMs = parseInt(result.totalDurationMs, 10) || undefined;
           agent.toolUseCount = parseInt(result.totalToolUseCount, 10) || 0;
           agent.currentTool = undefined;
-          if (result.status === "error" && typeof result.content === "string") {
-            agent.errorMessage = result.content.slice(0, 500);
+          if (result.status === "error" && result.content) {
+            if (typeof result.content === "string") {
+              agent.errorMessage = result.content.slice(0, 500);
+            } else if (Array.isArray(result.content)) {
+              const text = (result.content as Array<Record<string, unknown>>)
+                .filter((b) => b.type === "text")
+                .map((b) => b.text as string)
+                .join("\n");
+              if (text) agent.errorMessage = text.slice(0, 500);
+            }
           }
         }
 
@@ -163,19 +171,26 @@ export class AgentTreeBuilder {
     const agent = this.agentById.get(agentId);
     if (!agent) return;
 
-    if (line.type === "assistant" && line.message.usage) {
-      accumulateTokens(agent.tokenUsage, line.message.usage, line.message.model);
+    if (line.type === "assistant") {
+      if (line.message.usage) {
+        accumulateTokens(agent.tokenUsage, line.message.usage, line.message.model);
+      }
       if (!agent.model && line.message.model) {
         agent.model = line.message.model;
       }
-    }
 
-    if (line.type === "assistant") {
       for (const block of line.message.content) {
         if (block.type === "tool_use") {
           agent.toolUseCount++;
           agent.currentTool = block.name;
         }
+      }
+
+      // Detect completion from subagent's final message
+      if (line.message.stop_reason === "end_turn" && agent.status === "running") {
+        agent.status = "completed";
+        agent.completedAt = line.timestamp;
+        agent.currentTool = undefined;
       }
     }
   }
