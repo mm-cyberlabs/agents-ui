@@ -12,6 +12,7 @@ import {
   parseJsonlFile,
   discoverSessions,
   JsonlTail,
+  SessionWatcher,
 } from "@agents-ui/core";
 import type { JsonlLine, AssistantMessage } from "@agents-ui/core";
 import type { DiscoveredSession } from "@agents-ui/core";
@@ -40,6 +41,7 @@ interface ManagedSession {
 export class SessionStore extends EventEmitter<SessionStoreEvents> {
   private sessions = new Map<string, ManagedSession>();
   private statusCheckInterval?: ReturnType<typeof setInterval>;
+  private watcher?: SessionWatcher;
 
   getSessions(): Session[] {
     return Array.from(this.sessions.values()).map((m) => m.session);
@@ -62,11 +64,23 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       await this.addSession(disc);
     }
 
+    // Watch for new sessions (file watcher + 10s polling fallback)
+    this.watcher = new SessionWatcher();
+    this.watcher.on("session:discovered", (disc) => this.addSession(disc));
+    this.watcher.on("session:updated", (disc) => {
+      // If we don't know about it yet, add it
+      if (!this.sessions.has(disc.sessionId)) {
+        this.addSession(disc);
+      }
+    });
+    await this.watcher.start();
+
     // Periodic status check
     this.statusCheckInterval = setInterval(() => this.checkSessionStatuses(), 10_000);
   }
 
   async shutdown(): Promise<void> {
+    this.watcher?.stop();
     if (this.statusCheckInterval) clearInterval(this.statusCheckInterval);
     for (const [, managed] of this.sessions) {
       managed.tail.stop();

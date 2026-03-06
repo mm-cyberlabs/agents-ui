@@ -74,7 +74,7 @@ Claude Code sessions → JSONL files + HTTP hooks → server (SessionStore) → 
 - The `AgentTreeBuilder` (core/parsers/) detects subagent spawning by finding `tool_use` blocks with `name: "Agent"` or `name: "Task"`, and correlates completions via `toolUseResult.agentId` on user messages.
 - `JsonlTail` tracks byte offset per file to avoid re-reading large files (sessions can be 100MB+).
 - Session lifecycle: `active` → `idle` (60s no writes) → `completed` (5min or SessionEnd hook). Only active and idle sessions are shown in both TUI and web; completed sessions are filtered out.
-- Server port defaults to 47860.
+- Server port defaults to 40110.
 
 ### TUI Features
 

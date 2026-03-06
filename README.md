@@ -167,7 +167,7 @@ That's it. No manual steps.
 ```bash
 agents-ui              # Start the TUI dashboard
 agents-ui web          # Start the web dashboard (opens browser)
-agents-ui --port 9000  # Use a custom port (default: 47860)
+agents-ui --port 9000  # Use a custom port (default: 40110)
 ```
 
 Open a Claude Code session in another terminal and watch your agents appear in real-time.

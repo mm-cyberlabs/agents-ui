@@ -13,7 +13,7 @@ const program = new Command()
 program
   .command("start", { isDefault: true })
   .description("Open the TUI (connects to the background server)")
-  .option("-p, --port <port>", "Server port", "47860")
+  .option("-p, --port <port>", "Server port", "40110")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     const wsUrl = `ws://127.0.0.1:${port}/ws`;
@@ -26,7 +26,7 @@ program
 program
   .command("serve")
   .description("Run the server headlessly (used by LaunchAgent)")
-  .option("-p, --port <port>", "Server port", "47860")
+  .option("-p, --port <port>", "Server port", "40110")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     await createApp({ port });
@@ -39,7 +39,7 @@ program
 program
   .command("web")
   .description("Open the web UI in a browser (server must be running)")
-  .option("-p, --port <port>", "Server port", "47860")
+  .option("-p, --port <port>", "Server port", "40110")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     const open = await import("open");
@@ -50,7 +50,7 @@ program
 program
   .command("setup")
   .description("Configure Claude Code HTTP hooks for real-time monitoring")
-  .option("-p, --port <port>", "Server port", "47860")
+  .option("-p, --port <port>", "Server port", "40110")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     await installHooks(port);
@@ -66,7 +66,7 @@ program
 program
   .command("teardown")
   .description("Remove Claude Code HTTP hooks")
-  .option("-p, --port <port>", "Server port", "47860")
+  .option("-p, --port <port>", "Server port", "40110")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     await removeHooks(port);
