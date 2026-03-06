@@ -10,15 +10,30 @@ const program = new Command()
   .description("Real-time Claude Code agent monitor")
   .version("0.1.0");
 
+async function ensureServer(port: number): Promise<void> {
+  try {
+    const res = await fetch(`http://127.0.0.1:${port}/api/health`);
+    if (res.ok) return; // Server already running
+  } catch {
+    // Server not running, start it
+  }
+
+  console.log(`Starting background server on port ${port}...`);
+  const { app } = await createApp({ port });
+
+  // Keep server alive in the background (won't block since TUI takes over)
+  process.on("exit", () => app.close());
+}
+
 program
   .command("start", { isDefault: true })
-  .description("Open the TUI (connects to the background server)")
+  .description("Open the TUI (starts server if needed)")
   .option("-p, --port <port>", "Server port", "40110")
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
-    const wsUrl = `ws://127.0.0.1:${port}/ws`;
+    await ensureServer(port);
 
-    // Dynamically import TUI to avoid loading Ink unless needed
+    const wsUrl = `ws://127.0.0.1:${port}/ws`;
     const { startTui } = await import("@agents-ui/tui");
     await startTui(wsUrl);
   });

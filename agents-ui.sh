@@ -47,14 +47,39 @@ fi
 
 # ─── Commands ─────────────────────────────────────────────────────────────────
 
+ensure_server() {
+    # Check if server is already running on the target port
+    if curl -sf "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    echo -e "  ${DIM}Starting background server on port ${PORT}...${RESET}"
+    cd "$SCRIPT_DIR"
+    nohup node packages/cli/dist/index.js serve --port "$PORT" >/dev/null 2>&1 &
+    SERVER_PID=$!
+
+    # Wait up to 5 seconds for the server to be ready
+    for i in $(seq 1 50); do
+        if curl -sf "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+            return 0
+        fi
+        sleep 0.1
+    done
+
+    echo -e "  ${RED}Server failed to start${RESET}"
+    return 1
+}
+
 cmd_start() {
     echo -e "${CYAN}${BOLD}agents-ui${RESET} ${DIM}— starting on port ${PORT}${RESET}"
+    ensure_server
     cd "$SCRIPT_DIR"
     exec node packages/cli/dist/index.js start --port "$PORT"
 }
 
 cmd_web() {
     echo -e "${CYAN}${BOLD}agents-ui${RESET} ${DIM}— starting web UI on port ${PORT}${RESET}"
+    ensure_server
     cd "$SCRIPT_DIR"
     exec node packages/cli/dist/index.js web --port "$PORT"
 }
