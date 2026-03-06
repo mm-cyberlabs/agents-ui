@@ -59,7 +59,7 @@ export interface BaseMessageFields {
 }
 
 export interface SubagentResult {
-  status: "completed" | "error";
+  status: "completed" | "error" | "async_launched";
   prompt: string;
   agentId: string;
   content: string;
