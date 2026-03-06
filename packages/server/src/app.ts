@@ -19,7 +19,7 @@ export interface AppOptions {
 
 export async function createApp(options: AppOptions = {}) {
   const port = options.port ?? 40110;
-  const host = options.host ?? "127.0.0.1";
+  const host = options.host ?? "0.0.0.0";
 
   const app = Fastify({ logger: false });
 
