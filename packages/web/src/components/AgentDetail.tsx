@@ -29,6 +29,7 @@ const STATUS_BADGE: Record<string, string> = {
 };
 
 const EVENT_CONFIG: Record<ActivityEvent["type"], { icon: string; color: string }> = {
+  user_input: { icon: "\u{1F464}", color: "text-blue-400" },
   text: { icon: "\u{1F4AC}", color: "text-gray-300" },
   tool_start: { icon: "\u26A1", color: "text-yellow-400" },
   tool_end: { icon: "\u2713", color: "text-green-400" },
@@ -40,6 +41,8 @@ const EVENT_CONFIG: Record<ActivityEvent["type"], { icon: string; color: string 
 
 function getDescription(evt: ActivityEvent): string {
   switch (evt.type) {
+    case "user_input":
+      return evt.data.text?.slice(0, 200) ?? "";
     case "text":
       return evt.data.text?.slice(0, 200) ?? "";
     case "tool_start":
@@ -127,6 +130,15 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
             &times;
           </button>
         </div>
+
+        {/* Error message */}
+        {node.status === "error" && node.errorMessage && (
+          <div className="mx-4 mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+            <pre className="text-xs text-red-400 whitespace-pre-wrap font-mono max-h-32 overflow-y-auto">
+              {node.errorMessage}
+            </pre>
+          </div>
+        )}
 
         {/* Body — scrollable */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">

@@ -125,6 +125,9 @@ export class AgentTreeBuilder {
         agent.durationMs = parseInt(result.totalDurationMs, 10) || undefined;
         agent.toolUseCount = parseInt(result.totalToolUseCount, 10) || 0;
         agent.currentTool = undefined;
+        if (result.status === "error" && result.content) {
+          agent.errorMessage = result.content.slice(0, 500);
+        }
 
         // Parse usage from the stringified JSON
         try {

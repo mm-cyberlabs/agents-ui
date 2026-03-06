@@ -16,6 +16,7 @@ export interface AgentNode {
   tokenUsage: AggregatedTokenUsage;
   toolUseCount: number;
   currentTool?: string; // currently executing tool name (for live display)
+  errorMessage?: string; // brief error from agent failure
   children: AgentNode[];
 }
 

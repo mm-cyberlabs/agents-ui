@@ -141,6 +141,13 @@ function AgentDetail({ node }: { node: AgentNode }) {
         <Text dimColor>Status:</Text>
         <Text color={statusColor} bold>{statusLabel}</Text>
       </Box>
+      {node.status === "error" && node.errorMessage && (
+        <Box marginTop={0}>
+          <Text color="red" wrap="truncate-end">
+            {node.errorMessage.length > 300 ? node.errorMessage.slice(0, 300) + "…" : node.errorMessage}
+          </Text>
+        </Box>
+      )}
       {node.model && (
         <Box gap={1}>
           <Text dimColor>Model:</Text>
