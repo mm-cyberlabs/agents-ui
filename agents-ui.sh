@@ -38,7 +38,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Also handle: agents-ui --port 9000 (before the command)
+# Also handle: agents-ui --port 40110 (before the command)
 # Re-parse if first arg was a flag
 if [[ "$COMMAND" == "-p" || "$COMMAND" == "--port" ]]; then
     PORT="${1:-$PORT}"
