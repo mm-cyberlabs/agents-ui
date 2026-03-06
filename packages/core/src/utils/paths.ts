@@ -1,5 +1,5 @@
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { join, sep } from "node:path";
 
 export function getClaudeDir(): string {
   return join(homedir(), ".claude");
@@ -27,7 +27,7 @@ export function getSettingsPath(): string {
  */
 export function decodeProjectDir(encoded: string): string {
   if (!encoded.startsWith("-")) return encoded;
-  return encoded.replace(/-/g, "/");
+  return encoded.replace(/-/g, sep);
 }
 
 /**
@@ -36,7 +36,7 @@ export function decodeProjectDir(encoded: string): string {
  */
 export function getProjectDisplayName(encoded: string): string {
   const decoded = decodeProjectDir(encoded);
-  const segments = decoded.split("/").filter(Boolean);
+  const segments = decoded.split(/[\\/]/).filter(Boolean);
   return segments[segments.length - 1] ?? encoded;
 }
 

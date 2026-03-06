@@ -3,7 +3,7 @@
 import { Command } from "commander";
 import { createApp } from "@agents-ui/server";
 import { installHooks, removeHooks } from "./setup/hook-config.js";
-import { installLaunchAgent, removeLaunchAgent } from "./setup/launch-agent.js";
+import { installService, removeService } from "./setup/launch-agent.js";
 
 const program = new Command()
   .name("agents-ui")
@@ -72,8 +72,8 @@ program
     console.log(`HTTP hooks configured in ~/.claude/settings.json`);
     console.log(`Hooks will POST to http://localhost:${port}/api/hooks/*`);
 
-    await installLaunchAgent(port);
-    console.log(`Background server installed and started (LaunchAgent)`);
+    await installService(port);
+    console.log(`Background server installed and started`);
     console.log(`\nServer running at http://127.0.0.1:${port}`);
     console.log(`Run 'agents-ui' to open the TUI, or 'agents-ui web' for the browser UI.`);
   });
@@ -87,8 +87,8 @@ program
     await removeHooks(port);
     console.log(`HTTP hooks removed from ~/.claude/settings.json`);
 
-    await removeLaunchAgent();
-    console.log(`Background server stopped and removed (LaunchAgent)`);
+    await removeService();
+    console.log(`Background server stopped and removed`);
   });
 
 program.parse();
