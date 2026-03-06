@@ -14,6 +14,7 @@ const EVENT_CONFIG: Record<
   ActivityEvent["type"],
   { icon: string; color: string }
 > = {
+  user_input: { icon: "👤", color: "text-blue-400" },
   text: { icon: "💬", color: "text-gray-300" },
   tool_start: { icon: "⚡", color: "text-yellow-400" },
   tool_end: { icon: "✓", color: "text-green-400" },
@@ -25,6 +26,8 @@ const EVENT_CONFIG: Record<
 
 function getDescription(evt: ActivityEvent): string {
   switch (evt.type) {
+    case "user_input":
+      return evt.data.text?.slice(0, 120) ?? "";
     case "text":
       return evt.data.text?.slice(0, 120) ?? "";
     case "tool_start":

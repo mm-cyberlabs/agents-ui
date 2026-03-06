@@ -14,7 +14,7 @@ import {
   JsonlTail,
   SessionWatcher,
 } from "@agents-ui/core";
-import type { JsonlLine, AssistantMessage } from "@agents-ui/core";
+import type { JsonlLine, AssistantMessage, UserMessage } from "@agents-ui/core";
 import type { DiscoveredSession } from "@agents-ui/core";
 import { randomUUID } from "node:crypto";
 
@@ -252,6 +252,28 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
 
   private lineToActivities(sessionId: string, line: JsonlLine): ActivityEvent[] {
     const events: ActivityEvent[] = [];
+
+    if (line.type === "user" && !line.toolUseResult && !line.isMeta) {
+      const msg = line as UserMessage;
+      let text = "";
+      if (typeof msg.message.content === "string") {
+        text = msg.message.content;
+      } else if (Array.isArray(msg.message.content)) {
+        text = msg.message.content
+          .filter((b) => b.type === "text")
+          .map((b) => (b as { text: string }).text)
+          .join(" ");
+      }
+      if (text.trim()) {
+        events.push({
+          id: randomUUID(),
+          type: "user_input",
+          timestamp: msg.timestamp,
+          sessionId,
+          data: { text: text.slice(0, 500) },
+        });
+      }
+    }
 
     if (line.type === "assistant") {
       const msg = line as AssistantMessage;

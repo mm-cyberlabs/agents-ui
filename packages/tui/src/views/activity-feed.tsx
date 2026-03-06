@@ -14,6 +14,8 @@ function formatTime(iso: string): string {
 
 function getEventIcon(type: ActivityEvent["type"]): { icon: string; color: string } {
   switch (type) {
+    case "user_input":
+      return { icon: "👤", color: "cyan" };
     case "text":
       return { icon: "💬", color: "white" };
     case "tool_start":
@@ -51,6 +53,9 @@ export function ActivityFeed({ events, maxLines = 30 }: ActivityFeedProps) {
           let description = "";
 
           switch (evt.type) {
+            case "user_input":
+              description = evt.data.text?.slice(0, 80) ?? "";
+              break;
             case "text":
               description = evt.data.text?.slice(0, 80) ?? "";
               break;

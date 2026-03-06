@@ -14,6 +14,7 @@ export interface AggregatedTokenUsage {
 }
 
 export type ActivityEventType =
+  | "user_input"
   | "text"
   | "tool_start"
   | "tool_end"
