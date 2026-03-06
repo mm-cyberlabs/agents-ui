@@ -17,6 +17,8 @@ export interface SessionWatcherEvents {
 export class SessionWatcher extends EventEmitter<SessionWatcherEvents> {
   private watcher: FSWatcher | null = null;
   private knownSessions = new Map<string, DiscoveredSession>();
+  private pollTimer: ReturnType<typeof setInterval> | null = null;
+  private static readonly POLL_INTERVAL_MS = 10_000; // Re-scan every 10 seconds
 
   /**
    * Start watching. Performs initial discovery, then watches for changes.
@@ -45,12 +47,19 @@ export class SessionWatcher extends EventEmitter<SessionWatcherEvents> {
     this.watcher.on("unlink", (filePath) => this.handleFileRemove(filePath));
     this.watcher.on("error", (err) => this.emit("error", err instanceof Error ? err : new Error(String(err))));
 
+    // Periodic re-scan to catch sessions that file watcher may miss
+    this.pollTimer = setInterval(() => this.pollForNewSessions(), SessionWatcher.POLL_INTERVAL_MS);
+
     return sessions;
   }
 
   stop(): void {
     this.watcher?.close();
     this.watcher = null;
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
   }
 
   private async handleFileAdd(filePath: string): Promise<void> {
@@ -98,6 +107,27 @@ export class SessionWatcher extends EventEmitter<SessionWatcherEvents> {
         this.emit("session:removed", sessionId);
         return;
       }
+    }
+  }
+
+  private async pollForNewSessions(): Promise<void> {
+    try {
+      const sessions = await discoverSessions();
+      for (const session of sessions) {
+        if (!this.knownSessions.has(session.sessionId)) {
+          this.knownSessions.set(session.sessionId, session);
+          this.emit("session:discovered", session);
+        } else {
+          // Check if existing session has been updated
+          const known = this.knownSessions.get(session.sessionId)!;
+          if (session.lastModified > known.lastModified) {
+            this.knownSessions.set(session.sessionId, session);
+            this.emit("session:updated", session);
+          }
+        }
+      }
+    } catch (err) {
+      this.emit("error", err instanceof Error ? err : new Error(String(err)));
     }
   }
 }

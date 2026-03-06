@@ -30,7 +30,31 @@ pnpm monorepo with 5 packages under `packages/`:
 - **server** — Fastify HTTP/WebSocket server. Receives hook POSTs at `/api/hooks/:eventType`, tails JSONL files via core's `JsonlTail`, maintains in-memory `SessionStore`, broadcasts updates over WebSocket at `/ws`.
 - **tui** — Ink (React for CLI) terminal dashboard. Connects to server via WebSocket.
 - **web** — Vite + React + TypeScript + Tailwind web dashboard. Must import from `@agents-ui/core/browser` (not `@agents-ui/core`) to avoid Node.js module bundling errors.
-- **cli** — Entry point. `agents-ui` starts server + TUI, `agents-ui web` opens browser, `agents-ui setup` configures HTTP hooks in `~/.claude/settings.json`.
+- **cli** — Entry point. Manages the background server via macOS LaunchAgent. See CLI Commands below.
+
+### CLI Commands
+
+| Command | Description |
+|---|---|
+| `agents-ui setup` | Install: configures HTTP hooks + starts persistent background server (LaunchAgent) |
+| `agents-ui teardown` | Uninstall: removes hooks + stops and removes background server |
+| `agents-ui` | Opens TUI, connects to the running background server |
+| `agents-ui web` | Opens web UI in browser |
+| `agents-ui serve` | Runs server headlessly (used internally by LaunchAgent) |
+
+### Background Server (macOS LaunchAgent)
+
+The server runs as a persistent macOS LaunchAgent (`com.agents-ui.server`):
+- Installed/started by `agents-ui setup`, removed by `agents-ui teardown`
+- Plist at `~/Library/LaunchAgents/com.agents-ui.server.plist`
+- `RunAtLoad: true` — starts on login; `KeepAlive: true` — restarts on crash
+- Logs to `~/.claude/agents-ui-server.log`
+
+### Session Discovery
+
+`SessionWatcher` uses two mechanisms to find sessions:
+1. **chokidar file watcher** — real-time fs events for new/changed JSONL files
+2. **10-second polling interval** — periodic `discoverSessions()` re-scan as a fallback (chokidar can miss events on macOS)
 
 ### Data Flow
 
