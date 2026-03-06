@@ -1,7 +1,12 @@
 import type { FastifyInstance } from "fastify";
+import { discoverInstalledConfig } from "@agents-ui/core";
 import type { SessionStore } from "../state/session-store.js";
 
 export function registerSessionRoutes(app: FastifyInstance, store: SessionStore): void {
+  app.get("/api/config", async () => {
+    return discoverInstalledConfig();
+  });
+
   app.get("/api/sessions", async () => {
     return store.getSessions();
   });

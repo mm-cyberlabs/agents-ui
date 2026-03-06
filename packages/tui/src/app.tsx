@@ -7,8 +7,9 @@ import { SessionList } from "./views/session-list.js";
 import { AgentTreeView, getAgentCount } from "./views/agent-tree-view.js";
 import { ActivityFeed } from "./views/activity-feed.js";
 import { TokenDashboard } from "./views/token-dashboard.js";
+import { ConfigView } from "./views/config-view.js";
 
-const TABS = ["Sessions", "Agents", "Activity", "Tokens"];
+const TABS = ["Sessions", "Agents", "Activity", "Tokens", "Config"];
 
 interface AppProps {
   serverUrl: string;
@@ -109,12 +110,13 @@ export function App({ serverUrl }: AppProps) {
         )}
         {activeTab === 2 && <ActivityFeed events={sessionActivity} />}
         {activeTab === 3 && <TokenDashboard session={currentSession} />}
+        {activeTab === 4 && <ConfigView serverUrl={serverUrl} />}
       </Box>
 
       {/* Footer */}
       <Box paddingX={1} borderStyle="single" borderTop borderColor="gray">
         <Text dimColor>
-          ↑↓ {activeTab === 0 ? "select session" : activeTab === 1 ? "select agent" : "scroll"}  ←→ switch tab  1-4 jump to tab  q quit
+          ↑↓ {activeTab === 0 ? "select session" : activeTab === 1 ? "select agent" : "scroll"}  ←→ switch tab  1-5 jump to tab  q quit
         </Text>
       </Box>
     </Box>

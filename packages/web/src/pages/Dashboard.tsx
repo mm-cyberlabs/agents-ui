@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import type { Session } from "@agents-ui/core/browser";
 import { getProjectDisplayName } from "@agents-ui/core/browser";
 import { SessionCard } from "../components/SessionCard.js";
@@ -66,13 +66,21 @@ export function Dashboard({ sessions, connected }: Props) {
             Real-time Claude Code agent monitor
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <span
-            className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`}
-          />
-          <span className="text-sm text-gray-500">
-            {connected ? "Connected" : "Disconnected"}
-          </span>
+        <div className="flex items-center gap-4">
+          <Link
+            to="/config"
+            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
+          >
+            Config
+          </Link>
+          <div className="flex items-center gap-2">
+            <span
+              className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`}
+            />
+            <span className="text-sm text-gray-500">
+              {connected ? "Connected" : "Disconnected"}
+            </span>
+          </div>
         </div>
       </div>
 

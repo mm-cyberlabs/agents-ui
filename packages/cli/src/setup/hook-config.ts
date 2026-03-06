@@ -35,25 +35,28 @@ export async function installHooks(port = 40110): Promise<void> {
 
   const hooks = (settings.hooks ?? {}) as Record<string, unknown[]>;
 
+  // Clean up any existing agents-ui hooks (from previous installs on different ports)
+  for (const event of HOOK_EVENTS) {
+    const existing = hooks[event];
+    if (!Array.isArray(existing)) continue;
+    hooks[event] = existing.filter((entry) => {
+      const rec = entry as Record<string, unknown>;
+      if (!Array.isArray(rec.hooks)) return true;
+      rec.hooks = (rec.hooks as Array<Record<string, unknown>>).filter(
+        (h) => !(h.type === "http" && typeof h.url === "string" && (h.url as string).includes("/api/hooks/")),
+      );
+      return (rec.hooks as unknown[]).length > 0;
+    });
+    if (hooks[event].length === 0) delete hooks[event];
+  }
+
+  // Add fresh hooks for the current port
   for (const event of HOOK_EVENTS) {
     const hookUrl = buildHookUrl(baseUrl, event);
-    const existing = hooks[event] ?? [];
-
-    // Check if we already have this hook URL
-    const alreadyConfigured = (existing as Array<Record<string, unknown>>).some(
-      (entry) =>
-        Array.isArray(entry.hooks) &&
-        entry.hooks.some(
-          (h: Record<string, unknown>) => h.type === "http" && h.url === hookUrl,
-        ),
-    );
-
-    if (!alreadyConfigured) {
-      const newEntry = {
-        hooks: [{ type: "http", url: hookUrl, timeout: 5 }],
-      };
-      hooks[event] = [...existing, newEntry];
-    }
+    const newEntry = {
+      hooks: [{ type: "http", url: hookUrl, timeout: 5 }],
+    };
+    hooks[event] = [...(hooks[event] ?? []), newEntry];
   }
 
   settings.hooks = hooks;

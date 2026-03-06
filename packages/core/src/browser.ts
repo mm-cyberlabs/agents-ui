@@ -52,6 +52,12 @@ export type {
   ClientMessage,
 } from "./types/ws-protocol.js";
 
+export type {
+  InstalledAgent,
+  InstalledSkill,
+  InstalledConfig,
+} from "./types/agent-config.js";
+
 // Pure functions (no Node.js deps)
 
 /**

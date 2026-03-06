@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useWs } from "./hooks/use-ws.js";
 import { Dashboard } from "./pages/Dashboard.js";
 import { SessionDetail } from "./pages/SessionDetail.js";
+import { ConfigPage } from "./pages/ConfigPage.js";
 
 function getWsUrl(): string {
   // In dev, Vite proxies /ws to the server
@@ -23,6 +24,7 @@ export function App() {
           path="/session/:id"
           element={<SessionDetail sessions={sessions} activity={activity} />}
         />
+        <Route path="/config" element={<ConfigPage />} />
       </Routes>
     </BrowserRouter>
   );

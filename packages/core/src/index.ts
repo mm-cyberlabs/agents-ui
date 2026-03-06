@@ -51,6 +51,12 @@ export type {
   ClientMessage,
 } from "./types/ws-protocol.js";
 
+export type {
+  InstalledAgent,
+  InstalledSkill,
+  InstalledConfig,
+} from "./types/agent-config.js";
+
 // Functions & classes
 export { createRootAgent, createEmptyTokenUsage } from "./types/agent-tree.js";
 export { parseJsonlLine, parseJsonlFile, parseJsonlFileAll } from "./parsers/jsonl-parser.js";
@@ -58,6 +64,7 @@ export { discoverSessions, discoverProjectSessions } from "./parsers/session-dis
 export type { DiscoveredSession } from "./parsers/session-discovery.js";
 export { AgentTreeBuilder } from "./parsers/agent-tree-builder.js";
 export { accumulateTokens, createTokenUsage, mergeTokenUsage } from "./parsers/token-aggregator.js";
+export { discoverInstalledConfig } from "./parsers/config-discovery.js";
 export { JsonlTail } from "./watchers/jsonl-tail.js";
 export type { JsonlTailEvents } from "./watchers/jsonl-tail.js";
 export { SessionWatcher } from "./watchers/session-watcher.js";
