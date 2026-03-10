@@ -17,7 +17,7 @@ export function AgentRow({ node, selected }: { node: AgentNode; selected?: boole
   const statusColor =
     node.status === "running" ? "green" : node.status === "error" ? "red" : "gray";
   const statusIcon = node.status === "running" ? "●" : node.status === "error" ? "✗" : "○";
-  const label = node.agentId === "root" ? "Main Agent" : node.agentType ?? node.agentId;
+  const label = node.agentId === "root" ? "Main Agent" : node.name ?? node.agentType ?? node.agentId;
   const tokens = node.tokenUsage.totalInputTokens + node.tokenUsage.totalOutputTokens;
 
   const contextPct =

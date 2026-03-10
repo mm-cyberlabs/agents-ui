@@ -165,6 +165,120 @@ print(json.dumps(settings, indent=2))
     echo ""
 }
 
+cmd_health() {
+    echo ""
+    echo -e "${CYAN}${BOLD}agents-ui${RESET} health check ${DIM}(port ${PORT})${RESET}"
+    echo ""
+
+    PASS="${GREEN}✓${RESET}"
+    WARN="${YELLOW}!${RESET}"
+    FAIL="${RED}✗${RESET}"
+    ERRORS=0
+
+    # 1. Server
+    if curl -sf "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+        echo -e "  ${PASS} Server              Running on port ${PORT}"
+    else
+        echo -e "  ${FAIL} Server              Not reachable on port ${PORT}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 2. WebSocket
+    # Use Node.js to test WebSocket connectivity
+    WS_RESULT=$(node -e "
+        const ws = new WebSocket('ws://127.0.0.1:${PORT}/ws');
+        const t = setTimeout(() => { console.log('fail'); process.exit(0); }, 3000);
+        ws.onopen = () => { clearTimeout(t); ws.close(); console.log('ok'); process.exit(0); };
+        ws.onerror = () => { clearTimeout(t); console.log('fail'); process.exit(0); };
+    " 2>/dev/null || echo "fail")
+    if [[ "$WS_RESULT" == "ok" ]]; then
+        echo -e "  ${PASS} WebSocket           Connected to ws://127.0.0.1:${PORT}/ws"
+    else
+        echo -e "  ${FAIL} WebSocket           Connection failed"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 3. Web Dashboard
+    WEB_CONTENT_TYPE=$(curl -sf -o /dev/null -w '%{content_type}' "http://127.0.0.1:${PORT}/" 2>/dev/null || echo "")
+    if [[ "$WEB_CONTENT_TYPE" == *"text/html"* ]]; then
+        echo -e "  ${PASS} Web Dashboard       Serving at http://127.0.0.1:${PORT}"
+    elif curl -sf "http://127.0.0.1:${PORT}/api/health" >/dev/null 2>&1; then
+        echo -e "  ${WARN} Web Dashboard       Server running but web assets not built"
+        echo -e "                        ${DIM}Run: cd $SCRIPT_DIR && pnpm --filter @agents-ui/web run build${RESET}"
+    else
+        echo -e "  ${FAIL} Web Dashboard       Not reachable"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 4. Hooks
+    SETTINGS_FILE="$HOME/.claude/settings.json"
+    HOOKS_BASE="http://localhost:${PORT}/api/hooks/"
+    HOOK_EVENTS_LIST="SessionStart SessionEnd PreToolUse PostToolUse SubagentStart SubagentStop Stop PreCompact"
+    TOTAL_HOOKS=8
+
+    if [[ -f "$SETTINGS_FILE" ]]; then
+        FOUND_HOOKS=$(python3 -c "
+import json
+with open('${SETTINGS_FILE}') as f:
+    settings = json.load(f)
+hooks = settings.get('hooks', {})
+base = '${HOOKS_BASE}'
+events = '${HOOK_EVENTS_LIST}'.split()
+count = 0
+for event in events:
+    entries = hooks.get(event, [])
+    for entry in entries:
+        for h in entry.get('hooks', []):
+            if h.get('type') == 'http' and isinstance(h.get('url', ''), str) and h['url'].startswith(base):
+                count += 1
+                break
+print(count)
+" 2>/dev/null || echo "0")
+
+        if [[ "$FOUND_HOOKS" -eq "$TOTAL_HOOKS" ]]; then
+            echo -e "  ${PASS} Hooks               All ${FOUND_HOOKS}/${TOTAL_HOOKS} hooks configured"
+        elif [[ "$FOUND_HOOKS" -gt 0 ]]; then
+            echo -e "  ${WARN} Hooks               ${FOUND_HOOKS}/${TOTAL_HOOKS} hooks configured"
+            echo -e "                        ${DIM}Run: agents-ui setup${RESET}"
+        else
+            echo -e "  ${FAIL} Hooks               No hooks configured"
+            echo -e "                        ${DIM}Run: agents-ui setup${RESET}"
+            ERRORS=$((ERRORS + 1))
+        fi
+    else
+        echo -e "  ${FAIL} Hooks               Settings file not found at ${SETTINGS_FILE}"
+        ERRORS=$((ERRORS + 1))
+    fi
+
+    # 5. Background Service
+    PLIST="$HOME/Library/LaunchAgents/com.agents-ui.server.plist"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        if [[ -f "$PLIST" ]] && launchctl list 2>/dev/null | grep -q "com.agents-ui.server"; then
+            echo -e "  ${PASS} Background Service  LaunchAgent loaded and running"
+        elif [[ -f "$PLIST" ]]; then
+            echo -e "  ${WARN} Background Service  LaunchAgent plist exists but not loaded"
+        else
+            echo -e "  ${WARN} Background Service  LaunchAgent not installed"
+            echo -e "                        ${DIM}Run: agents-ui setup${RESET}"
+        fi
+    else
+        if schtasks /query /tn "AgentsUI-Server" >/dev/null 2>&1; then
+            echo -e "  ${PASS} Background Service  Windows Task Scheduler registered"
+        else
+            echo -e "  ${WARN} Background Service  Task not found"
+            echo -e "                        ${DIM}Run: agents-ui setup${RESET}"
+        fi
+    fi
+
+    echo ""
+    if [[ "$ERRORS" -eq 0 ]]; then
+        echo -e "  ${GREEN}${BOLD}All systems operational.${RESET}"
+    else
+        echo -e "  ${RED}${BOLD}${ERRORS} check(s) failed.${RESET}"
+    fi
+    echo ""
+}
+
 cmd_help() {
     echo ""
     echo -e "${CYAN}${BOLD}agents-ui${RESET} — Real-time Claude Code agent monitor"
@@ -173,6 +287,7 @@ cmd_help() {
     echo ""
     echo -e "    ${CYAN}agents-ui${RESET}                  Start the TUI dashboard"
     echo -e "    ${CYAN}agents-ui web${RESET}              Start the web dashboard"
+    echo -e "    ${CYAN}agents-ui health${RESET}           Check status of all components"
     echo -e "    ${CYAN}agents-ui start${RESET}            Same as agents-ui (default)"
     echo -e "    ${CYAN}agents-ui uninstall${RESET}        Remove agents-ui and hooks"
     echo -e "    ${CYAN}agents-ui help${RESET}             Show this help message"
@@ -191,6 +306,7 @@ cmd_help() {
 case "$COMMAND" in
     start)      cmd_start ;;
     web)        cmd_web ;;
+    health)     cmd_health ;;
     uninstall)  cmd_uninstall ;;
     help|--help|-h)  cmd_help ;;
     *)

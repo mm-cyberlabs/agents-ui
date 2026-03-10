@@ -3,7 +3,14 @@ import { render } from "ink";
 import { App } from "./app.js";
 
 export async function startTui(serverUrl = "ws://127.0.0.1:40110/ws") {
-  const { unmount, waitUntilExit } = render(<App serverUrl={serverUrl} />);
+  // Clear screen and move cursor to top before rendering
+  process.stdout.write("\x1B[2J");    // clear screen
+  process.stdout.write("\x1B[3J");    // clear scrollback buffer
+  process.stdout.write("\x1B[H");     // move cursor to top-left
+
+  const { unmount, waitUntilExit } = render(<App serverUrl={serverUrl} />, {
+    exitOnCtrlC: false,
+  });
 
   // Handle Ctrl+C
   process.on("SIGINT", () => {

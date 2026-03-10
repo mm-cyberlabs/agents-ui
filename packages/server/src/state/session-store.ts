@@ -68,9 +68,11 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     this.watcher = new SessionWatcher();
     this.watcher.on("session:discovered", (disc) => this.addSession(disc));
     this.watcher.on("session:updated", (disc) => {
-      // If we don't know about it yet, add it
       if (!this.sessions.has(disc.sessionId)) {
         this.addSession(disc);
+      } else {
+        // Check for new subagent files and start tailing them
+        this.startNewSubagentTails(disc);
       }
     });
     await this.watcher.start();
@@ -227,6 +229,23 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     this.emit("session:updated", session);
     this.emit("tokens:updated", sessionId, session.tokenUsage);
     this.emit("agent:updated", sessionId, session.agentTree);
+  }
+
+  /**
+   * Check for new subagent JSONL files and start tailing them.
+   */
+  private async startNewSubagentTails(disc: DiscoveredSession): Promise<void> {
+    const managed = this.sessions.get(disc.sessionId);
+    if (!managed) return;
+
+    for (const subPath of disc.subagentPaths) {
+      const match = subPath.match(/agent-([a-f0-9]+)\.jsonl$/);
+      if (!match) continue;
+      const agentId = match[1];
+      if (!managed.subagentTails.has(agentId)) {
+        await this.startSubagentTail(disc.sessionId, subPath);
+      }
+    }
   }
 
   private async startSubagentTail(sessionId: string, subPath: string): Promise<void> {
@@ -423,7 +442,9 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     managed.idleTimer = setTimeout(() => {
       if (managed.session.status === "active") {
         managed.session.status = "idle";
+        this.markRunningAgentsCompleted(managed.session.agentTree, managed.session.lastActivityAt);
         this.emit("session:updated", managed.session);
+        this.emit("agent:updated", managed.session.id, managed.session.agentTree);
       }
 
       // Set completed timer
@@ -438,16 +459,38 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
 
   private checkSessionStatuses(): void {
     const now = Date.now();
-    for (const [, managed] of this.sessions) {
+    for (const [sessionId, managed] of this.sessions) {
       const age = now - new Date(managed.session.lastActivityAt).getTime();
+      let changed = false;
+
       if (managed.session.status === "active" && age > IDLE_TIMEOUT_MS) {
         managed.session.status = "idle";
-        this.emit("session:updated", managed.session);
+        this.markRunningAgentsCompleted(managed.session.agentTree, managed.session.lastActivityAt);
+        changed = true;
       }
       if (managed.session.status === "idle" && age > COMPLETED_TIMEOUT_MS) {
         managed.session.status = "completed";
-        this.emit("session:updated", managed.session);
+        changed = true;
       }
+
+      if (changed) {
+        this.emit("session:updated", managed.session);
+        this.emit("agent:updated", sessionId, managed.session.agentTree);
+      }
+    }
+  }
+
+  /**
+   * When a session goes idle, mark any agents still showing "running" as completed.
+   */
+  private markRunningAgentsCompleted(node: AgentNode, completedAt: string): void {
+    if (node.status === "running") {
+      node.status = "completed";
+      node.completedAt = completedAt;
+      node.currentTool = undefined;
+    }
+    for (const child of node.children) {
+      this.markRunningAgentsCompleted(child, completedAt);
     }
   }
 }

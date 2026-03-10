@@ -70,7 +70,7 @@ export function AgentDetail({ node, activity, onClose }: AgentDetailProps) {
   const backdropRef = useRef<HTMLDivElement>(null);
   const logRef = useRef<HTMLDivElement>(null);
 
-  const label = node.agentId === "root" ? "Main Agent" : node.agentType ?? node.agentId;
+  const label = node.agentId === "root" ? "Main Agent" : node.name ?? node.agentType ?? node.agentId;
   const tokens = node.tokenUsage;
   const totalTokens = tokens.totalInputTokens + tokens.totalOutputTokens;
   const contextPct =

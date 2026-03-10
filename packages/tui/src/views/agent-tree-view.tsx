@@ -111,7 +111,7 @@ export function AgentTreeView({ session, selectedIndex }: AgentTreeViewProps) {
 
 /** Agent detail panel */
 function AgentDetail({ node }: { node: AgentNode }) {
-  const label = node.agentId === "root" ? "Main Agent" : node.agentType ?? node.agentId;
+  const label = node.agentId === "root" ? "Main Agent" : node.name ?? node.agentType ?? node.agentId;
   const inputTokens = node.tokenUsage.totalInputTokens;
   const outputTokens = node.tokenUsage.totalOutputTokens;
   const totalTok = inputTokens + outputTokens;

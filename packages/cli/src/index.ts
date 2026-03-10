@@ -4,6 +4,7 @@ import { Command } from "commander";
 import { createApp } from "@agents-ui/server";
 import { installHooks, removeHooks } from "./setup/hook-config.js";
 import { installService, removeService } from "./setup/launch-agent.js";
+import { runHealthCheck } from "./health.js";
 
 const program = new Command()
   .name("agents-ui")
@@ -76,6 +77,15 @@ program
     console.log(`Background server installed and started`);
     console.log(`\nServer running at http://127.0.0.1:${port}`);
     console.log(`Run 'agents-ui' to open the TUI, or 'agents-ui web' for the browser UI.`);
+  });
+
+program
+  .command("health")
+  .description("Check the health of all agents-ui components")
+  .option("-p, --port <port>", "Server port", "40110")
+  .action(async (opts) => {
+    const port = parseInt(opts.port, 10);
+    await runHealthCheck(port);
   });
 
 program

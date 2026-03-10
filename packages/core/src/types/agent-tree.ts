@@ -7,6 +7,7 @@ export interface AgentNode {
   sessionId: string;
   parentAgentId: string | null;
   agentType?: string; // e.g. "Explore", "Plan", "general-purpose", custom name
+  name?: string; // descriptive name from tool_use input.description
   model?: string;
   prompt?: string; // the prompt given to this agent
   status: AgentStatus;

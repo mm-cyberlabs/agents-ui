@@ -68,6 +68,7 @@ export class AgentTreeBuilder {
           sessionId: msg.sessionId,
           parentAgentId: "root",
           agentType: (input.subagent_type as string) ?? (input.description as string),
+          name: input.description as string | undefined,
           model: input.model as string | undefined,
           prompt: input.prompt as string | undefined,
           status: "running",

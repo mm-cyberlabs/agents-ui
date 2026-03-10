@@ -66,7 +66,7 @@ function TreeNode({
 }) {
   const { node, x, y } = positioned;
   const s = STATUS[node.status];
-  const label = node.agentId === "root" ? "Main Agent" : node.agentType ?? node.agentId;
+  const label = node.agentId === "root" ? "Main Agent" : node.name ?? node.agentType ?? node.agentId;
   const tokens = node.tokenUsage.totalInputTokens + node.tokenUsage.totalOutputTokens;
   const hw = CARD_W / 2;
   const hh = CARD_H / 2;

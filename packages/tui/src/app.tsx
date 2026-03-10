@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Box, Text, useInput, useApp } from "ink";
+import { Box, Text, useInput, useApp, useStdout } from "ink";
 import type { Session, ActivityEvent } from "@agents-ui/core";
 import { useWs } from "./hooks/use-ws.js";
 import { TabBar } from "./components/tab-bar.js";
@@ -16,6 +16,8 @@ interface AppProps {
 }
 
 export function App({ serverUrl }: AppProps) {
+  const { stdout } = useStdout();
+  const terminalHeight = stdout?.rows ?? process.stdout.rows ?? 24;
   const { sessions, activity, connected } = useWs(serverUrl);
   const [activeTab, setActiveTab] = useState(0);
   const [selectedSession, setSelectedSession] = useState(0);
@@ -89,7 +91,7 @@ export function App({ serverUrl }: AppProps) {
   });
 
   return (
-    <Box flexDirection="column" width="100%">
+    <Box flexDirection="column" width="100%" height={terminalHeight}>
       {/* Header */}
       <Box justifyContent="space-between" paddingX={1}>
         <Text bold color="#E67D22">agents-ui</Text>
