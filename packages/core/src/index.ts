@@ -63,7 +63,7 @@ export { parseJsonlLine, parseJsonlFile, parseJsonlFileAll } from "./parsers/jso
 export { discoverSessions, discoverProjectSessions } from "./parsers/session-discovery.js";
 export type { DiscoveredSession } from "./parsers/session-discovery.js";
 export { AgentTreeBuilder } from "./parsers/agent-tree-builder.js";
-export { accumulateTokens, createTokenUsage, mergeTokenUsage } from "./parsers/token-aggregator.js";
+export { accumulateTokens, createTokenUsage, mergeTokenUsage, getContextWindowSize } from "./parsers/token-aggregator.js";
 export { discoverInstalledConfig } from "./parsers/config-discovery.js";
 export { JsonlTail } from "./watchers/jsonl-tail.js";
 export type { JsonlTailEvents } from "./watchers/jsonl-tail.js";

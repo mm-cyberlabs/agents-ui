@@ -3,6 +3,21 @@ import type { AggregatedTokenUsage } from "../types/session.js";
 import { createEmptyTokenUsage } from "../types/agent-tree.js";
 
 /**
+ * Get the context window size for a given model identifier.
+ */
+export function getContextWindowSize(model?: string): number {
+  if (!model) return 200_000;
+  const m = model.toLowerCase();
+  // Opus 4.6 with 1M context
+  if (m.includes("opus-4-6") || m.includes("opus-4.6")) return 1_000_000;
+  if (m.includes("opus") && m.includes("1m")) return 1_000_000;
+  // Sonnet 4.6 with 1M context
+  if (m.includes("sonnet-4-6") || m.includes("sonnet-4.6")) return 1_000_000;
+  if (m.includes("sonnet") && m.includes("1m")) return 1_000_000;
+  return 200_000;
+}
+
+/**
  * Accumulate a single API response's token usage into an aggregated total.
  */
 export function accumulateTokens(
@@ -21,7 +36,10 @@ export function accumulateTokens(
     (usage.cache_read_input_tokens ?? 0) +
     (usage.cache_creation_input_tokens ?? 0);
 
+  // Update context window size based on model
   if (model) {
+    agg.contextWindowSize = getContextWindowSize(model);
+
     if (!agg.byModel[model]) {
       agg.byModel[model] = { inputTokens: 0, outputTokens: 0 };
     }
@@ -52,6 +70,7 @@ export function mergeTokenUsage(
   merged.totalCacheReadTokens = a.totalCacheReadTokens + b.totalCacheReadTokens;
   merged.totalCacheWriteTokens = a.totalCacheWriteTokens + b.totalCacheWriteTokens;
   merged.estimatedContextUsed = Math.max(a.estimatedContextUsed, b.estimatedContextUsed);
+  merged.contextWindowSize = Math.max(a.contextWindowSize, b.contextWindowSize);
   merged.compactionCount = a.compactionCount + b.compactionCount;
 
   // Merge byModel
