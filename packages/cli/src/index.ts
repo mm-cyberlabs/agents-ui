@@ -1,15 +1,21 @@
 #!/usr/bin/env node
 
+import { execSync } from "node:child_process";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { Command } from "commander";
 import { createApp } from "@agents-ui/server";
 import { installHooks, removeHooks } from "./setup/hook-config.js";
 import { installService, removeService } from "./setup/launch-agent.js";
 import { runHealthCheck } from "./health.js";
 
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, "../../..");
+
 const program = new Command()
   .name("agents-ui")
   .description("Real-time Claude Code agent monitor")
-  .version("0.1.0");
+  .version("0.2.0");
 
 async function ensureServer(port: number): Promise<void> {
   try {
@@ -86,6 +92,34 @@ program
   .action(async (opts) => {
     const port = parseInt(opts.port, 10);
     await runHealthCheck(port);
+  });
+
+program
+  .command("update")
+  .description("Pull latest code, rebuild, and restart the server")
+  .option("-p, --port <port>", "Server port", "40110")
+  .action(async (opts) => {
+    const port = parseInt(opts.port, 10);
+
+    console.log("Pulling latest changes...");
+    try {
+      execSync("git pull --ff-only", { cwd: REPO_ROOT, stdio: "inherit" });
+    } catch {
+      console.error("Failed to pull. Resolve conflicts and try again.");
+      process.exit(1);
+    }
+
+    console.log("\nInstalling dependencies...");
+    execSync("pnpm install", { cwd: REPO_ROOT, stdio: "inherit" });
+
+    console.log("\nBuilding...");
+    execSync("pnpm run build", { cwd: REPO_ROOT, stdio: "inherit" });
+
+    console.log("\nRestarting server...");
+    await removeService();
+    await installService(port);
+
+    console.log("\nUpdate complete! Server restarted.");
   });
 
 program

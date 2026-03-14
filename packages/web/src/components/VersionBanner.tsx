@@ -23,21 +23,24 @@ export function VersionBanner() {
       }
     };
     check();
-    const interval = setInterval(check, 60 * 1000); // check every minute
+    const interval = setInterval(check, 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
   if (!version || !version.updateAvailable || dismissed) return null;
 
   return (
-    <div className="bg-cyan-600/90 text-white text-center py-2 px-4 text-sm font-medium flex items-center justify-center gap-3 sticky top-0 z-[100]">
+    <div className="bg-gradient-to-r from-amber-500 to-yellow-500 text-gray-950 text-center py-2.5 px-4 text-sm font-semibold flex items-center justify-center gap-3 sticky top-0 z-[100] shadow-lg shadow-amber-500/20">
+      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+      </svg>
       <span>
         A new version of agents-ui is available.
-        Run <code className="bg-black/20 px-1.5 py-0.5 rounded font-mono text-xs">agents-ui setup</code> to update.
+        Run <code className="bg-black/10 px-1.5 py-0.5 rounded font-mono text-xs">agents-ui update</code> to update.
       </span>
       <button
         onClick={() => setDismissed(true)}
-        className="text-white/70 hover:text-white text-lg leading-none ml-2"
+        className="text-gray-950/50 hover:text-gray-950 text-lg leading-none ml-2 transition-colors"
       >
         &times;
       </button>
