@@ -51,6 +51,7 @@ export interface Session {
   version: string;
   model?: string;
   status: SessionStatus;
+  waitingForInput: boolean;
   startedAt: string;
   lastActivityAt: string;
   messageCount: number;

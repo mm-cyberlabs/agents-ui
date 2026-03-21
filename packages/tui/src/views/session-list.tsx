@@ -1,7 +1,6 @@
 import React from "react";
 import { Box, Text } from "ink";
 import type { Session } from "@agents-ui/core";
-import { StatusBadge } from "../components/status-badge.js";
 import { getProjectDisplayName } from "@agents-ui/core";
 
 interface SessionListProps {
@@ -65,7 +64,13 @@ export function SessionList({ sessions, selectedIndex }: SessionListProps) {
               {project.padEnd(22).slice(0, 22)}
               {(session.gitBranch || "-").padEnd(16).slice(0, 16)}
             </Text>
-            <StatusBadge status={session.status} />
+            {session.waitingForInput ? (
+              <Text color="yellow" bold>⚠ waiting </Text>
+            ) : (
+              <Text color={session.status === "active" ? "green" : session.status === "idle" ? "yellow" : "gray"}>
+                {session.status === "active" ? "●" : session.status === "idle" ? "◐" : "○"} {session.status.padEnd(9)}
+              </Text>
+            )}
             <Text>
               {"  "}
               {(session.model ?? "-").padEnd(18).slice(0, 18)}

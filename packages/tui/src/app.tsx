@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Box, Text, useInput, useApp, useStdout } from "ink";
 import type { Session, ActivityEvent } from "@agents-ui/core";
+import { getProjectDisplayName } from "@agents-ui/core";
 import { useWs } from "./hooks/use-ws.js";
 import { TabBar } from "./components/tab-bar.js";
 import { SessionList } from "./views/session-list.js";
@@ -31,6 +32,19 @@ export function App({ serverUrl }: AppProps) {
       ),
     [sessions],
   );
+
+  const waitingSessions = useMemo(
+    () => sessionList.filter((s) => s.waitingForInput),
+    [sessionList],
+  );
+
+  // Blink toggle for the waiting alert
+  const [alertBlink, setAlertBlink] = useState(true);
+  useEffect(() => {
+    if (waitingSessions.length === 0) return;
+    const interval = setInterval(() => setAlertBlink((v) => !v), 800);
+    return () => clearInterval(interval);
+  }, [waitingSessions.length]);
 
   const currentSession: Session | null = sessionList[selectedSession] ?? null;
 
@@ -99,6 +113,20 @@ export function App({ serverUrl }: AppProps) {
           {connected ? "● Connected" : "○ Disconnected"}
         </Text>
       </Box>
+
+      {/* Waiting-for-input alert */}
+      {waitingSessions.length > 0 && (
+        <Box
+          paddingX={1}
+          justifyContent="center"
+          borderStyle="double"
+          borderColor={alertBlink ? "yellow" : "gray"}
+        >
+          <Text color={alertBlink ? "yellow" : "gray"} bold>
+            ⚠ WAITING FOR INPUT — {waitingSessions.map((s) => getProjectDisplayName(s.projectDir)).join(", ")}
+          </Text>
+        </Box>
+      )}
 
       <TabBar tabs={TABS} activeIndex={activeTab} />
 

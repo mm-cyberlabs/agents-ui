@@ -15,6 +15,7 @@ When you run Claude Code in your terminal, agents-ui observes the session in rea
 - **Activity feed** — every tool call (Read, Edit, Bash, etc.) as it happens
 - **Token usage** — input/output/cache breakdown, per-model stats
 - **Context window health** — how full the context is, when compaction events occur
+- **Waiting-for-input alerts** — get notified when Claude is waiting for your input (blinking TUI banner, web popup)
 
 Two interfaces are available: a **terminal UI** (Ink/React) and a **web dashboard** (React + Tailwind).
 
@@ -99,6 +100,8 @@ Sessions transition through three states based on JSONL file activity:
 - **Active** — receiving new data
 - **Idle** — no new data for 60 seconds
 - **Completed** — idle for 5 minutes, or a `SessionEnd` hook event is received
+
+Sessions also track a `waitingForInput` flag, set when Claude stops with `end_turn` or a `Stop` hook fires. This is cleared when the user provides input (`UserPromptSubmit` hook or a new user message in JSONL). Both the TUI and web dashboard surface this as prominent alerts.
 
 On startup, the server discovers all sessions modified within the last 24 hours and begins tailing their JSONL files.
 
@@ -248,7 +251,7 @@ packages/
 ├── web/src/
 │   ├── App.tsx          # React Router setup
 │   ├── pages/           # Dashboard, SessionDetail
-│   ├── components/      # SessionCard, AgentTree, ActivityStream, TokenChart, ContextHealth
+│   ├── components/      # SessionCard, AgentTree, ActivityStream, TokenChart, ContextHealth, WaitingAlert
 │   ├── hooks/           # useWs (WebSocket connection)
 │   └── styles/          # Tailwind globals
 └── cli/src/

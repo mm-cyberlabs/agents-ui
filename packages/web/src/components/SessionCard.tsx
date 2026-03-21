@@ -7,6 +7,8 @@ const STATUS_COLORS: Record<SessionStatus, string> = {
   completed: "bg-gray-500",
 };
 
+const WAITING_BORDER = "border-yellow-500/60 ring-1 ring-yellow-500/30";
+
 function formatTokens(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
   if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
@@ -40,11 +42,20 @@ export function SessionCard({ session, onClick }: Props) {
   return (
     <button
       onClick={onClick}
-      className="bg-gray-900 border border-gray-800 rounded-lg p-4 hover:border-cyan-600 transition-colors text-left w-full"
+      className={`bg-gray-900 border rounded-lg p-4 hover:border-cyan-600 transition-colors text-left w-full ${
+        session.waitingForInput ? WAITING_BORDER : "border-gray-800"
+      }`}
     >
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-lg font-bold text-cyan-400 truncate">{project}</h3>
-        <span className={`w-2 h-2 rounded-full ${STATUS_COLORS[session.status]}`} />
+        <div className="flex items-center gap-2">
+          {session.waitingForInput && (
+            <span className="text-yellow-400 text-xs font-bold animate-pulse">
+              ⚠ WAITING
+            </span>
+          )}
+          <span className={`w-2 h-2 rounded-full ${session.waitingForInput ? "bg-yellow-400 animate-pulse" : STATUS_COLORS[session.status]}`} />
+        </div>
       </div>
 
       <div className="text-sm text-gray-400 mb-3 space-y-1">

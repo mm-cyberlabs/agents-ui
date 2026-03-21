@@ -3,6 +3,8 @@ import { useWs } from "./hooks/use-ws.js";
 import { Dashboard } from "./pages/Dashboard.js";
 import { SessionDetail } from "./pages/SessionDetail.js";
 import { ConfigPage } from "./pages/ConfigPage.js";
+import { VersionBanner } from "./components/VersionBanner.js";
+import { WaitingAlert } from "./components/WaitingAlert.js";
 
 function getWsUrl(): string {
   // In dev, Vite proxies /ws to the server
@@ -15,6 +17,8 @@ export function App() {
 
   return (
     <BrowserRouter>
+      <VersionBanner />
+      <WaitingAlert sessions={sessions} />
       <Routes>
         <Route
           path="/"

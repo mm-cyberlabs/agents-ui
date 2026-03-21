@@ -109,6 +109,7 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       gitBranch: "",
       version: "",
       status: "idle",
+      waitingForInput: false,
       startedAt: now,
       lastActivityAt: disc.lastModified.toISOString(),
       messageCount: 0,
@@ -171,8 +172,17 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       this.addActivity(managed, activity);
     }
 
+    // Detect waiting-for-input state
+    if (eventType === "Stop") {
+      session.waitingForInput = true;
+    }
+    if (eventType === "UserPromptSubmit") {
+      session.waitingForInput = false;
+    }
+
     if (eventType === "SessionEnd") {
       session.status = "completed";
+      session.waitingForInput = false;
     }
 
     if (eventType === "PreCompact") {
@@ -212,6 +222,14 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     // Update model from assistant messages
     if (line.type === "assistant" && line.message.model) {
       session.model = line.message.model;
+    }
+
+    // Detect waiting-for-input from JSONL
+    if (line.type === "assistant" && line.message.stop_reason === "end_turn") {
+      session.waitingForInput = true;
+    }
+    if (line.type === "user" && !line.isMeta) {
+      session.waitingForInput = false;
     }
 
     // Generate activity events
@@ -442,6 +460,7 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     managed.idleTimer = setTimeout(() => {
       if (managed.session.status === "active") {
         managed.session.status = "idle";
+        managed.session.waitingForInput = false;
         this.markRunningAgentsCompleted(managed.session.agentTree, managed.session.lastActivityAt);
         this.emit("session:updated", managed.session);
         this.emit("agent:updated", managed.session.id, managed.session.agentTree);
@@ -451,6 +470,7 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       managed.idleTimer = setTimeout(() => {
         if (managed.session.status === "idle") {
           managed.session.status = "completed";
+          managed.session.waitingForInput = false;
           this.emit("session:updated", managed.session);
         }
       }, COMPLETED_TIMEOUT_MS - IDLE_TIMEOUT_MS);
