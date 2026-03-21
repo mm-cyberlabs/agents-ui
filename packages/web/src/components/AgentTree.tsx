@@ -1,5 +1,6 @@
 import { useState, useRef, useMemo, useEffect, useCallback } from "react";
 import type { AgentNode, ActivityEvent } from "@agents-ui/core/browser";
+import { pruneStaleAgents } from "@agents-ui/core/browser";
 import {
   computeTreeLayout,
   CARD_W,
@@ -66,7 +67,7 @@ function TreeNode({
 }) {
   const { node, x, y } = positioned;
   const s = STATUS[node.status];
-  const label = node.agentId === "root" ? "Main Agent" : node.name ?? node.agentType ?? node.agentId;
+  const label = node.agentId === "root" ? (node.name ?? "Main Agent") : node.name ?? node.agentType ?? node.agentId;
   const tokens = node.tokenUsage.totalInputTokens + node.tokenUsage.totalOutputTokens;
   const hw = CARD_W / 2;
   const hh = CARD_H / 2;
@@ -81,6 +82,7 @@ function TreeNode({
         onClick(node, x, y);
       }}
       style={{ cursor: "pointer" }}
+      filter="url(#card-shadow)"
     >
       <defs>
         <clipPath id={clipId}>
@@ -164,7 +166,8 @@ interface AgentTreeProps {
   activity?: ActivityEvent[];
 }
 
-export function AgentTree({ root, activity = [] }: AgentTreeProps) {
+export function AgentTree({ root: rawRoot, activity = [] }: AgentTreeProps) {
+  const root = useMemo(() => pruneStaleAgents(rawRoot), [rawRoot]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
   const [transform, setTransform] = useState<{ scale: number; x: number; y: number } | null>(null);
@@ -369,6 +372,11 @@ export function AgentTree({ root, activity = [] }: AgentTreeProps) {
           onPointerUp={onPointerUp}
           style={{ cursor: dragging ? "grabbing" : "grab", userSelect: "none" }}
         >
+          <defs>
+            <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="130%">
+              <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#000000" floodOpacity="0.5" />
+            </filter>
+          </defs>
           <g transform={`translate(${t.x}, ${t.y}) scale(${t.scale})`}>
             {filteredEdges.map((edge, i) => (
               <TreeEdge key={i} edge={edge} />

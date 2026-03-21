@@ -16,12 +16,16 @@ interface Props {
 function buildUnifiedTree(sessions: Session[]): AgentNode {
   const children: AgentNode[] = sessions.map((s) => {
     const pruned = pruneStaleAgents(s.agentTree);
-    // Re-label the session root with the project name
+    // Re-label the session root with the project name.
+    // Clear completedAt so pruneStaleAgents inside AgentTree doesn't
+    // filter out session roots for non-completed sessions.
     return {
       ...pruned,
       agentId: `session-root-${s.id}`,
       name: getProjectDisplayName(s.projectDir),
       agentType: s.model ?? "session",
+      status: s.status === "active" ? "running" as const : pruned.status,
+      completedAt: undefined,
     };
   });
 
