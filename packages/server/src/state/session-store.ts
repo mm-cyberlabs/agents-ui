@@ -36,6 +36,7 @@ interface ManagedSession {
   tail: JsonlTail;
   subagentTails: Map<string, JsonlTail>;
   idleTimer?: ReturnType<typeof setTimeout>;
+  pendingToolTimer?: ReturnType<typeof setTimeout>;
 }
 
 export class SessionStore extends EventEmitter<SessionStoreEvents> {
@@ -122,6 +123,7 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       managed.tail.stop();
       for (const [, subTail] of managed.subagentTails) subTail.stop();
       if (managed.idleTimer) clearTimeout(managed.idleTimer);
+      if (managed.pendingToolTimer) clearTimeout(managed.pendingToolTimer);
     }
     this.sessions.clear();
   }
@@ -216,6 +218,23 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       session.waitingForInput = true;
     }
     if (eventType === "UserPromptSubmit") {
+      session.waitingForInput = false;
+    }
+
+    // Track tool permission prompts: PreToolUse fires before user approval.
+    // If PostToolUse doesn't follow within 3s, the tool is waiting for permission.
+    if (eventType === "PreToolUse") {
+      if (managed.pendingToolTimer) clearTimeout(managed.pendingToolTimer);
+      managed.pendingToolTimer = setTimeout(() => {
+        session.waitingForInput = true;
+        this.emit("session:updated", session);
+      }, 3000);
+    }
+    if (eventType === "PostToolUse" || eventType === "PostToolUseFailure") {
+      if (managed.pendingToolTimer) {
+        clearTimeout(managed.pendingToolTimer);
+        managed.pendingToolTimer = undefined;
+      }
       session.waitingForInput = false;
     }
 
