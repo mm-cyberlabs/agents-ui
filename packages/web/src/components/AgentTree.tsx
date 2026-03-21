@@ -24,15 +24,26 @@ function formatTokens(n: number): string {
 
 type StatusFilter = "all" | "running" | "completed" | "error";
 
-function TreeEdge({ edge }: { edge: PositionedEdge }) {
+function TreeEdge({ edge, orientation }: { edge: PositionedEdge; orientation: "vertical" | "horizontal" }) {
   const { source, target, targetNode } = edge;
   const isRunning = targetNode.status === "running";
 
-  const midY = (source.y + CARD_H / 2 + target.y - CARD_H / 2) / 2;
-  const d = `M ${source.x} ${source.y + CARD_H / 2}
-             L ${source.x} ${midY}
-             L ${target.x} ${midY}
-             L ${target.x} ${target.y - CARD_H / 2}`;
+  let d: string;
+  if (orientation === "horizontal") {
+    // Left-to-right: parent-right → child-left
+    const midX = (source.x + CARD_W / 2 + target.x - CARD_W / 2) / 2;
+    d = `M ${source.x + CARD_W / 2} ${source.y}
+         L ${midX} ${source.y}
+         L ${midX} ${target.y}
+         L ${target.x - CARD_W / 2} ${target.y}`;
+  } else {
+    // Top-down: parent-bottom → child-top
+    const midY = (source.y + CARD_H / 2 + target.y - CARD_H / 2) / 2;
+    d = `M ${source.x} ${source.y + CARD_H / 2}
+         L ${source.x} ${midY}
+         L ${target.x} ${midY}
+         L ${target.x} ${target.y - CARD_H / 2}`;
+  }
 
   return (
     <g>
@@ -178,9 +189,9 @@ export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }
   const dragStart = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
   const didDrag = useRef(false);
 
-  const { nodes, edges, width: treeW, height: treeH } = useMemo(
-    () => computeTreeLayout(root),
-    [root],
+  const { nodes, edges, width: treeW, height: treeH, orientation } = useMemo(
+    () => computeTreeLayout(root, containerW > 0 ? containerW : undefined),
+    [root, containerW],
   );
 
   const viewH = Math.max(500, Math.min(treeH + 60, 700));
@@ -380,7 +391,7 @@ export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }
           </defs>
           <g transform={`translate(${t.x}, ${t.y}) scale(${t.scale})`}>
             {filteredEdges.map((edge, i) => (
-              <TreeEdge key={i} edge={edge} />
+              <TreeEdge key={i} edge={edge} orientation={orientation} />
             ))}
             {filteredNodes.map((n, i) => (
               <TreeNode
