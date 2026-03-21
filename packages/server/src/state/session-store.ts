@@ -289,19 +289,11 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     }
 
     // Detect waiting-for-input from JSONL.
-    // Any new assistant message means the user already answered (or Claude
-    // is continuing). Set waiting only if this turn ends with end_turn.
-    if (line.type === "assistant") {
-      session.waitingForInput = line.message.stop_reason === "end_turn";
-    }
-    // Real user input also clears waiting.
-    if (line.type === "user" && !line.isMeta && !line.toolUseResult) {
-      const content = line.message.content;
-      const isToolResult =
-        Array.isArray(content) && content.some((b) => (b as { type: string }).type === "tool_result");
-      if (!isToolResult) {
-        session.waitingForInput = false;
-      }
+    // Any new line means the session is active — clear waiting first.
+    // Only re-set to true when Claude finishes a turn with end_turn.
+    session.waitingForInput = false;
+    if (line.type === "assistant" && line.message.stop_reason === "end_turn") {
+      session.waitingForInput = true;
     }
 
     // Generate activity events
