@@ -7,6 +7,7 @@ import { AgentTree } from "../components/AgentTree.js";
 interface Props {
   sessions: Map<string, Session>;
   activity: ActivityEvent[];
+  onRefresh: () => Promise<void>;
 }
 
 /**
@@ -48,7 +49,7 @@ function buildUnifiedTree(sessions: Session[]): AgentNode {
   };
 }
 
-export function AllAgents({ sessions, activity }: Props) {
+export function AllAgents({ sessions, activity, onRefresh }: Props) {
   const activeSessions = useMemo(() => {
     const result: Session[] = [];
     for (const s of sessions.values()) {
@@ -97,6 +98,13 @@ export function AllAgents({ sessions, activity }: Props) {
             )}
           </div>
         </div>
+        <button
+          onClick={onRefresh}
+          className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
+          title="Re-scan sessions and refresh statuses"
+        >
+          ↻ Refresh
+        </button>
       </div>
 
       {activeSessions.length === 0 ? (

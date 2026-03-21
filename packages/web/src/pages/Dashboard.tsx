@@ -19,9 +19,10 @@ function countAgents(session: Session): number {
 interface Props {
   sessions: Map<string, Session>;
   connected: boolean;
+  onRefresh: () => Promise<void>;
 }
 
-export function Dashboard({ sessions, connected }: Props) {
+export function Dashboard({ sessions, connected, onRefresh }: Props) {
   const sorted = useMemo(
     () =>
       Array.from(sessions.values())
@@ -67,6 +68,13 @@ export function Dashboard({ sessions, connected }: Props) {
           </p>
         </div>
         <div className="flex items-center gap-4">
+          <button
+            onClick={onRefresh}
+            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
+            title="Re-scan sessions and refresh statuses"
+          >
+            ↻ Refresh
+          </button>
           <Link
             to="/agents"
             className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"

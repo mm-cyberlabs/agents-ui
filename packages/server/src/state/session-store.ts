@@ -81,6 +81,40 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     this.statusCheckInterval = setInterval(() => this.checkSessionStatuses(), 10_000);
   }
 
+  /**
+   * Re-scan all sessions: discover new ones and re-evaluate status of existing ones.
+   */
+  async refresh(): Promise<void> {
+    const discovered = await discoverSessions();
+    const recentCutoff = Date.now() - 24 * 60 * 60 * 1000;
+
+    for (const disc of discovered) {
+      if (disc.lastModified.getTime() < recentCutoff) continue;
+
+      if (!this.sessions.has(disc.sessionId)) {
+        await this.addSession(disc);
+      } else {
+        // Re-evaluate status of existing sessions based on fresh file mtime
+        const managed = this.sessions.get(disc.sessionId)!;
+        const ageMs = Date.now() - disc.lastModified.getTime();
+
+        if (managed.session.waitingForInput) {
+          managed.session.status = "active";
+        } else if (ageMs <= IDLE_TIMEOUT_MS) {
+          managed.session.status = "active";
+        } else if (ageMs <= COMPLETED_TIMEOUT_MS) {
+          managed.session.status = "idle";
+        }
+
+        // Check for new subagent files
+        await this.startNewSubagentTails(disc);
+
+        this.emit("session:updated", managed.session);
+        this.emit("agent:updated", managed.session.id, managed.session.agentTree);
+      }
+    }
+  }
+
   async shutdown(): Promise<void> {
     this.watcher?.stop();
     if (this.statusCheckInterval) clearInterval(this.statusCheckInterval);
@@ -139,9 +173,14 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       await this.startSubagentTail(disc.sessionId, subPath);
     }
 
-    // Determine initial status based on file age
+    // Determine initial status based on file age, but respect waiting state.
+    // If the session is waiting for user input, it's still alive even if the
+    // JSONL file hasn't been written to in a while.
     const ageMs = Date.now() - disc.lastModified.getTime();
-    if (ageMs > COMPLETED_TIMEOUT_MS) {
+    if (session.waitingForInput) {
+      // Session is waiting for user input — keep it active
+      session.status = "active";
+    } else if (ageMs > COMPLETED_TIMEOUT_MS) {
       session.status = "completed";
     } else if (ageMs > IDLE_TIMEOUT_MS) {
       session.status = "idle";
@@ -464,9 +503,12 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     if (managed.idleTimer) clearTimeout(managed.idleTimer);
 
     managed.idleTimer = setTimeout(() => {
+      // Don't downgrade sessions that are waiting for user input —
+      // they're still alive, just waiting.
+      if (managed.session.waitingForInput) return;
+
       if (managed.session.status === "active") {
         managed.session.status = "idle";
-        managed.session.waitingForInput = false;
         this.markRunningAgentsCompleted(managed.session.agentTree, managed.session.lastActivityAt);
         this.emit("session:updated", managed.session);
         this.emit("agent:updated", managed.session.id, managed.session.agentTree);
@@ -474,9 +516,9 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
 
       // Set completed timer
       managed.idleTimer = setTimeout(() => {
+        if (managed.session.waitingForInput) return;
         if (managed.session.status === "idle") {
           managed.session.status = "completed";
-          managed.session.waitingForInput = false;
           this.emit("session:updated", managed.session);
         }
       }, COMPLETED_TIMEOUT_MS - IDLE_TIMEOUT_MS);
@@ -486,6 +528,9 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
   private checkSessionStatuses(): void {
     const now = Date.now();
     for (const [sessionId, managed] of this.sessions) {
+      // Don't downgrade sessions waiting for user input
+      if (managed.session.waitingForInput) continue;
+
       const age = now - new Date(managed.session.lastActivityAt).getTime();
       let changed = false;
 

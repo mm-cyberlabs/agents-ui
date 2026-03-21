@@ -9,6 +9,7 @@ export interface UseWsResult {
   sessions: Map<string, Session>;
   activity: ActivityEvent[];
   connected: boolean;
+  refresh: () => Promise<void>;
 }
 
 export function useWs(url: string): UseWsResult {
@@ -59,6 +60,24 @@ export function useWs(url: string): UseWsResult {
                 return next.length > 1000 ? next.slice(-1000) : next;
               });
               break;
+            case "agent:updated":
+              setSessions((prev) => {
+                const session = prev.get(msg.sessionId);
+                if (!session) return prev;
+                const next = new Map(prev);
+                next.set(msg.sessionId, { ...session, agentTree: msg.agentTree });
+                return next;
+              });
+              break;
+            case "tokens:updated":
+              setSessions((prev) => {
+                const session = prev.get(msg.sessionId);
+                if (!session) return prev;
+                const next = new Map(prev);
+                next.set(msg.sessionId, { ...session, tokenUsage: msg.usage });
+                return next;
+              });
+              break;
           }
         } catch {
           // Ignore parse errors
@@ -86,5 +105,15 @@ export function useWs(url: string): UseWsResult {
     };
   }, [connect]);
 
-  return { sessions, activity, connected };
+  const refresh = useCallback(async () => {
+    // Tell server to re-scan sessions and re-evaluate statuses
+    await fetch("/api/refresh", { method: "POST" }).catch(() => {});
+    // Request fresh snapshot over WebSocket
+    const ws = wsRef.current;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify({ type: "get:sessions" }));
+    }
+  }, []);
+
+  return { sessions, activity, connected, refresh };
 }

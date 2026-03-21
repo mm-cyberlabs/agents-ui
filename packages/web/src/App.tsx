@@ -14,7 +14,7 @@ function getWsUrl(): string {
 }
 
 export function App() {
-  const { sessions, activity, connected } = useWs(getWsUrl());
+  const { sessions, activity, connected, refresh } = useWs(getWsUrl());
 
   return (
     <BrowserRouter>
@@ -23,7 +23,7 @@ export function App() {
       <Routes>
         <Route
           path="/"
-          element={<Dashboard sessions={sessions} connected={connected} />}
+          element={<Dashboard sessions={sessions} connected={connected} onRefresh={refresh} />}
         />
         <Route
           path="/session/:id"
@@ -31,7 +31,7 @@ export function App() {
         />
         <Route
           path="/agents"
-          element={<AllAgents sessions={sessions} activity={activity} />}
+          element={<AllAgents sessions={sessions} activity={activity} onRefresh={refresh} />}
         />
         <Route path="/config" element={<ConfigPage />} />
       </Routes>

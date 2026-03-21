@@ -54,6 +54,11 @@ export function registerSessionRoutes(app: FastifyInstance, store: SessionStore)
     return versionCache;
   });
 
+  app.post("/api/refresh", async () => {
+    await store.refresh();
+    return { status: "ok", sessions: store.getSessions().length };
+  });
+
   app.get("/api/sessions", async () => {
     return store.getSessions();
   });
