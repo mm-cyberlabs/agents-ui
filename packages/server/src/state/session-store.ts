@@ -228,8 +228,14 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     if (line.type === "assistant" && line.message.stop_reason === "end_turn") {
       session.waitingForInput = true;
     }
-    if (line.type === "user" && !line.isMeta) {
-      session.waitingForInput = false;
+    if (line.type === "user" && !line.isMeta && !line.toolUseResult) {
+      // Only clear on real user input, not tool results or subagent returns
+      const content = line.message.content;
+      const isToolResult =
+        Array.isArray(content) && content.some((b) => (b as { type: string }).type === "tool_result");
+      if (!isToolResult) {
+        session.waitingForInput = false;
+      }
     }
 
     // Generate activity events

@@ -164,10 +164,11 @@ function TreeNode({
 interface AgentTreeProps {
   root: AgentNode;
   activity?: ActivityEvent[];
+  disablePrune?: boolean;
 }
 
-export function AgentTree({ root: rawRoot, activity = [] }: AgentTreeProps) {
-  const root = useMemo(() => pruneStaleAgents(rawRoot), [rawRoot]);
+export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }: AgentTreeProps) {
+  const root = useMemo(() => disablePrune ? rawRoot : pruneStaleAgents(rawRoot), [rawRoot, disablePrune]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
   const [transform, setTransform] = useState<{ scale: number; x: number; y: number } | null>(null);

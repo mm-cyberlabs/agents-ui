@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import type { Session, AgentNode, ActivityEvent } from "@agents-ui/core/browser";
-import { getProjectDisplayName, pruneStaleAgents } from "@agents-ui/core/browser";
+import { getProjectDisplayName } from "@agents-ui/core/browser";
 import { AgentTree } from "../components/AgentTree.js";
 
 interface Props {
@@ -15,17 +15,14 @@ interface Props {
  */
 function buildUnifiedTree(sessions: Session[]): AgentNode {
   const children: AgentNode[] = sessions.map((s) => {
-    const pruned = pruneStaleAgents(s.agentTree);
     // Re-label the session root with the project name.
-    // Clear completedAt so pruneStaleAgents inside AgentTree doesn't
-    // filter out session roots for non-completed sessions.
+    // Use the raw tree — no pruning — so all agents are visible.
     return {
-      ...pruned,
+      ...s.agentTree,
       agentId: `session-root-${s.id}`,
       name: getProjectDisplayName(s.projectDir),
       agentType: s.model ?? "session",
-      status: s.status === "active" ? "running" as const : pruned.status,
-      completedAt: undefined,
+      status: s.status === "active" ? "running" as const : s.agentTree.status,
     };
   });
 
@@ -108,7 +105,7 @@ export function AllAgents({ sessions, activity }: Props) {
           <p className="text-sm">Start a Claude Code session to see agents here.</p>
         </div>
       ) : (
-        <AgentTree root={unifiedRoot} activity={activity} />
+        <AgentTree root={unifiedRoot} activity={activity} disablePrune />
       )}
     </div>
   );
