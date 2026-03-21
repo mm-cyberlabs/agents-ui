@@ -16,6 +16,7 @@ When you run Claude Code in your terminal, agents-ui observes the session in rea
 - **Token usage** — input/output/cache breakdown, per-model stats
 - **Context window health** — how full the context is, when compaction events occur
 - **Waiting-for-input alerts** — get notified when Claude is waiting for your input (blinking TUI banner, web popup)
+- **All Agents view** — unified map of every running agent across all sessions on a single page (`/agents`)
 
 Two interfaces are available: a **terminal UI** (Ink/React) and a **web dashboard** (React + Tailwind).
 
@@ -250,7 +251,7 @@ packages/
 │   └── hooks/           # useWs (WebSocket connection)
 ├── web/src/
 │   ├── App.tsx          # React Router setup
-│   ├── pages/           # Dashboard, SessionDetail
+│   ├── pages/           # Dashboard, SessionDetail, AllAgents
 │   ├── components/      # SessionCard, AgentTree, ActivityStream, TokenChart, ContextHealth, WaitingAlert
 │   ├── hooks/           # useWs (WebSocket connection)
 │   └── styles/          # Tailwind globals

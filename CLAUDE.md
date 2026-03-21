@@ -90,4 +90,5 @@ Claude Code sessions → JSONL files + HTTP hooks → server (SessionStore) → 
 - **Multi-project grouping**: Sessions grouped by project with aggregate stats (tokens, agents, active count).
 - **Agent map**: Interactive SVG tree with zoom/pan, status filter buttons (All/Running/Completed/Error), particle animations on running edges, and click-to-open detail modal.
 - **Session detail**: Agent map + token chart + activity stream for a single session.
+- **All Agents view** (`/agents`): Unified agent map showing all running agents across every active session in a single tree. Each session root is labeled with its project name.
 - **Waiting-for-input popup**: Floating alert (top-right) for each session waiting for user input. Clickable to navigate to that session. Auto-dismisses when the user responds. Session cards and detail page also show a pulsing waiting badge.
