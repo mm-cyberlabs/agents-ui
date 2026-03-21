@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Link } from "react-router-dom";
 import type { Session, AgentNode, ActivityEvent } from "@agents-ui/core/browser";
 import { getProjectDisplayName, pruneStaleAgents } from "@agents-ui/core/browser";
 import { AgentTree } from "../components/AgentTree.js";
@@ -7,7 +6,6 @@ import { AgentTree } from "../components/AgentTree.js";
 interface Props {
   sessions: Map<string, Session>;
   activity: ActivityEvent[];
-  onRefresh: () => Promise<void>;
 }
 
 /**
@@ -52,7 +50,7 @@ function buildUnifiedTree(sessions: Session[]): AgentNode {
   };
 }
 
-export function AllAgents({ sessions, activity, onRefresh }: Props) {
+export function AllAgents({ sessions, activity }: Props) {
   const activeSessions = useMemo(() => {
     const result: Session[] = [];
     for (const s of sessions.values()) {
@@ -87,27 +85,15 @@ export function AllAgents({ sessions, activity, onRefresh }: Props) {
   return (
     <div className="p-6 w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div>
-          <Link to="/" className="text-cyan-400 hover:underline text-sm">
-            ← Back to Dashboard
-          </Link>
-          <h1 className="text-xl font-bold text-white mt-1">All Agents</h1>
-          <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
-            <span>{activeSessions.length} active session{activeSessions.length !== 1 ? "s" : ""}</span>
-            <span>{totalAgents} agent{totalAgents !== 1 ? "s" : ""}</span>
-            {runningCount > 0 && (
-              <span className="text-green-400">{runningCount} running</span>
-            )}
-          </div>
+      <div className="mb-6">
+        <h1 className="text-xl font-bold text-white">All Agents</h1>
+        <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
+          <span>{activeSessions.length} active session{activeSessions.length !== 1 ? "s" : ""}</span>
+          <span>{totalAgents} agent{totalAgents !== 1 ? "s" : ""}</span>
+          {runningCount > 0 && (
+            <span className="text-green-400">{runningCount} running</span>
+          )}
         </div>
-        <button
-          onClick={onRefresh}
-          className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
-          title="Re-scan sessions and refresh statuses"
-        >
-          ↻ Refresh
-        </button>
       </div>
 
       {activeSessions.length === 0 ? (

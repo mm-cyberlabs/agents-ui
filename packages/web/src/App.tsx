@@ -6,6 +6,7 @@ import { AllAgents } from "./pages/AllAgents.js";
 import { ConfigPage } from "./pages/ConfigPage.js";
 import { VersionBanner } from "./components/VersionBanner.js";
 import { WaitingAlert } from "./components/WaitingAlert.js";
+import { NavBar } from "./components/NavBar.js";
 
 function getWsUrl(): string {
   // In dev, Vite proxies /ws to the server
@@ -19,11 +20,12 @@ export function App() {
   return (
     <BrowserRouter>
       <VersionBanner />
+      <NavBar connected={connected} onRefresh={refresh} />
       <WaitingAlert sessions={sessions} />
       <Routes>
         <Route
           path="/"
-          element={<Dashboard sessions={sessions} connected={connected} onRefresh={refresh} />}
+          element={<Dashboard sessions={sessions} />}
         />
         <Route
           path="/session/:id"
@@ -31,7 +33,7 @@ export function App() {
         />
         <Route
           path="/agents"
-          element={<AllAgents sessions={sessions} activity={activity} onRefresh={refresh} />}
+          element={<AllAgents sessions={sessions} activity={activity} />}
         />
         <Route path="/config" element={<ConfigPage />} />
       </Routes>

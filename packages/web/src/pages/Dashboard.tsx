@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import type { Session } from "@agents-ui/core/browser";
 import { getProjectDisplayName } from "@agents-ui/core/browser";
 import { SessionCard } from "../components/SessionCard.js";
@@ -18,11 +18,9 @@ function countAgents(session: Session): number {
 
 interface Props {
   sessions: Map<string, Session>;
-  connected: boolean;
-  onRefresh: () => Promise<void>;
 }
 
-export function Dashboard({ sessions, connected, onRefresh }: Props) {
+export function Dashboard({ sessions }: Props) {
   const sorted = useMemo(
     () =>
       Array.from(sessions.values())
@@ -47,7 +45,6 @@ export function Dashboard({ sessions, connected, onRefresh }: Props) {
       }
       group.push(s);
     }
-    // Sort groups by most recent activity
     return Array.from(map.entries())
       .map(([projectDir, groupSessions]) => ({ projectDir, sessions: groupSessions }))
       .sort(
@@ -59,45 +56,6 @@ export function Dashboard({ sessions, connected, onRefresh }: Props) {
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-cyan-400">agents-ui</h1>
-          <p className="text-sm text-gray-500">
-            Real-time Claude Code agent monitor
-          </p>
-        </div>
-        <div className="flex items-center gap-4">
-          <button
-            onClick={onRefresh}
-            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
-            title="Re-scan sessions and refresh statuses"
-          >
-            ↻ Refresh
-          </button>
-          <Link
-            to="/agents"
-            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
-          >
-            All Agents
-          </Link>
-          <Link
-            to="/config"
-            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
-          >
-            Config
-          </Link>
-          <div className="flex items-center gap-2">
-            <span
-              className={`w-2 h-2 rounded-full ${connected ? "bg-green-400" : "bg-red-400"}`}
-            />
-            <span className="text-sm text-gray-500">
-              {connected ? "Connected" : "Disconnected"}
-            </span>
-          </div>
-        </div>
-      </div>
-
       {sorted.length === 0 ? (
         <div className="text-center py-20 text-gray-600">
           <p className="text-lg mb-2">No sessions found</p>

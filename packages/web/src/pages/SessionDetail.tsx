@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import type { Session, ActivityEvent } from "@agents-ui/core/browser";
 import { getProjectDisplayName } from "@agents-ui/core/browser";
 import { AgentTree } from "../components/AgentTree.js";
@@ -55,9 +55,6 @@ export function SessionDetail({ sessions, activity }: Props) {
   if (!session) {
     return (
       <div className="p-6 max-w-7xl mx-auto">
-        <Link to="/" className="text-cyan-400 hover:underline text-sm">
-          ← Back to Dashboard
-        </Link>
         <div className="text-center py-20 text-gray-600">
           Session not found
         </div>
@@ -105,10 +102,7 @@ export function SessionDetail({ sessions, activity }: Props) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <Link to="/" className="text-cyan-400 hover:underline text-sm">
-            ← Back
-          </Link>
-          <h1 className="text-xl font-bold text-white mt-1">{project}</h1>
+          <h1 className="text-xl font-bold text-white">{project}</h1>
           <div className="flex items-center gap-3 mt-1 text-sm text-gray-500">
             <span>Branch: {session.gitBranch || "-"}</span>
             <span>Version: {session.version || "-"}</span>
