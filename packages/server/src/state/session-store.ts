@@ -288,12 +288,15 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       session.model = line.message.model;
     }
 
-    // Detect waiting-for-input from JSONL.
-    // Assistant message: waiting only if stop_reason is end_turn.
-    // User message (real input, not tool results): clears waiting.
-    // Other line types (system, progress): don't change waiting state.
+    // Clear waiting-for-input from JSONL when the user responds or
+    // Claude starts a new turn. Don't SET it from JSONL — end_turn is
+    // ambiguous (could be waiting or task-complete). Only real-time
+    // hooks (Stop, PreToolUse timer) set waitingForInput to true.
     if (line.type === "assistant") {
-      session.waitingForInput = line.message.stop_reason === "end_turn";
+      // Claude is responding — user already answered
+      if (line.message.stop_reason !== "end_turn") {
+        session.waitingForInput = false;
+      }
     } else if (line.type === "user" && !line.isMeta && !line.toolUseResult) {
       const content = line.message.content;
       const isToolResult =
