@@ -176,11 +176,15 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     }
 
     // Determine initial status based on file age, but respect waiting state.
-    // If the session is waiting for user input, it's still alive even if the
-    // JSONL file hasn't been written to in a while.
+    // If the session is waiting for user input, it's still alive — unless
+    // the file hasn't been touched in over 2 hours (session is dead).
     const ageMs = Date.now() - disc.lastModified.getTime();
-    if (session.waitingForInput) {
-      // Session is waiting for user input — keep it active
+    const MAX_WAITING_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
+    if (session.waitingForInput && ageMs > MAX_WAITING_AGE_MS) {
+      // Too old — session is dead, not actually waiting
+      session.waitingForInput = false;
+      session.status = "completed";
+    } else if (session.waitingForInput) {
       session.status = "active";
     } else if (ageMs > COMPLETED_TIMEOUT_MS) {
       session.status = "completed";
@@ -550,12 +554,26 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
 
   private checkSessionStatuses(): void {
     const now = Date.now();
+    const MAX_WAITING_AGE_MS = 2 * 60 * 60 * 1000; // 2 hours
     for (const [sessionId, managed] of this.sessions) {
-      // Don't downgrade sessions waiting for user input
-      if (managed.session.waitingForInput) continue;
-
       const age = now - new Date(managed.session.lastActivityAt).getTime();
       let changed = false;
+
+      // Expire stale waiting sessions (no activity for 2+ hours)
+      if (managed.session.waitingForInput && age > MAX_WAITING_AGE_MS) {
+        managed.session.waitingForInput = false;
+        managed.session.status = "completed";
+        changed = true;
+      }
+
+      // Don't downgrade sessions waiting for user input
+      if (managed.session.waitingForInput) {
+        if (changed) {
+          this.emit("session:updated", managed.session);
+          this.emit("agent:updated", sessionId, managed.session.agentTree);
+        }
+        continue;
+      }
 
       if (managed.session.status === "active" && age > IDLE_TIMEOUT_MS) {
         managed.session.status = "idle";
