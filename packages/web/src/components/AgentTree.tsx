@@ -24,26 +24,16 @@ function formatTokens(n: number): string {
 
 type StatusFilter = "all" | "running" | "completed" | "error";
 
-function TreeEdge({ edge, orientation }: { edge: PositionedEdge; orientation: "vertical" | "horizontal" }) {
+function TreeEdge({ edge }: { edge: PositionedEdge }) {
   const { source, target, targetNode } = edge;
   const isRunning = targetNode.status === "running";
 
-  let d: string;
-  if (orientation === "horizontal") {
-    // Left-to-right: parent-right → child-left
-    const midX = (source.x + CARD_W / 2 + target.x - CARD_W / 2) / 2;
-    d = `M ${source.x + CARD_W / 2} ${source.y}
-         L ${midX} ${source.y}
-         L ${midX} ${target.y}
-         L ${target.x - CARD_W / 2} ${target.y}`;
-  } else {
-    // Top-down: parent-bottom → child-top
-    const midY = (source.y + CARD_H / 2 + target.y - CARD_H / 2) / 2;
-    d = `M ${source.x} ${source.y + CARD_H / 2}
-         L ${source.x} ${midY}
-         L ${target.x} ${midY}
-         L ${target.x} ${target.y - CARD_H / 2}`;
-  }
+  // Top-down: parent-bottom → child-top
+  const midY = (source.y + CARD_H / 2 + target.y - CARD_H / 2) / 2;
+  const d = `M ${source.x} ${source.y + CARD_H / 2}
+       L ${source.x} ${midY}
+       L ${target.x} ${midY}
+       L ${target.x} ${target.y - CARD_H / 2}`;
 
   return (
     <g>
@@ -182,19 +172,13 @@ export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }
   const root = useMemo(() => disablePrune ? rawRoot : pruneStaleAgents(rawRoot), [rawRoot, disablePrune]);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerW, setContainerW] = useState(0);
-  const [transform, setTransform] = useState<{ scale: number; x: number; y: number } | null>(null);
-  const [dragging, setDragging] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentNode | null>(null);
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-  const dragStart = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
-  const didDrag = useRef(false);
 
-  const { nodes, edges, width: treeW, height: treeH, orientation } = useMemo(
+  const { nodes, edges, width: treeW, height: treeH } = useMemo(
     () => computeTreeLayout(root, containerW > 0 ? containerW : undefined),
     [root, containerW],
   );
-
-  const viewH = Math.max(500, Math.min(treeH + 60, 700));
 
   // Status counts for filter buttons
   const statusCounts = useMemo(() => {
@@ -237,72 +221,8 @@ export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }
     return () => ro.disconnect();
   }, []);
 
-  // Auto-fit function
-  const fitToView = useCallback(() => {
-    if (containerW <= 0 || treeW <= 0) return;
-    const scaleX = containerW / treeW;
-    const scaleY = viewH / treeH;
-    const fitScale = Math.min(scaleX, scaleY, 1);
-    const offsetX = (containerW - treeW * fitScale) / 2;
-    const offsetY = treeH * fitScale < viewH ? (viewH - treeH * fitScale) / 2 : 10;
-    setTransform({ scale: fitScale, x: offsetX, y: offsetY });
-  }, [containerW, treeW, treeH, viewH]);
-
-  // Auto-fit on mount / resize / tree change
-  useEffect(() => {
-    fitToView();
-  }, [fitToView]);
-
-  const zoomIn = useCallback(() => {
-    setTransform((t) => t ? { ...t, scale: Math.min(3, t.scale + 0.2) } : t);
-  }, []);
-
-  const zoomOut = useCallback(() => {
-    setTransform((t) => t ? { ...t, scale: Math.max(0.1, t.scale - 0.2) } : t);
-  }, []);
-
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault();
-    setTransform((t) => {
-      if (!t) return t;
-      return { ...t, scale: Math.max(0.1, Math.min(3, t.scale - e.deltaY * 0.002)) };
-    });
-  }, []);
-
-  const onPointerDown = useCallback(
-    (e: React.PointerEvent) => {
-      if (!transform) return;
-      setDragging(true);
-      didDrag.current = false;
-      dragStart.current = { x: e.clientX, y: e.clientY, tx: transform.x, ty: transform.y };
-      (e.target as Element).setPointerCapture(e.pointerId);
-    },
-    [transform],
-  );
-
-  const onPointerMove = useCallback(
-    (e: React.PointerEvent) => {
-      if (!dragging) return;
-      const dx = e.clientX - dragStart.current.x;
-      const dy = e.clientY - dragStart.current.y;
-      if (Math.abs(dx) > 3 || Math.abs(dy) > 3) didDrag.current = true;
-      setTransform((t) => {
-        if (!t) return t;
-        return {
-          ...t,
-          x: dragStart.current.tx + dx,
-          y: dragStart.current.ty + dy,
-        };
-      });
-    },
-    [dragging],
-  );
-
-  const onPointerUp = useCallback(() => setDragging(false), []);
-
   const handleNodeClick = useCallback(
     (node: AgentNode, _nodeX: number, _nodeY: number) => {
-      if (didDrag.current) return;
       setSelectedAgent(node);
     },
     [],
@@ -323,11 +243,7 @@ export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }
   }, [root, selectedAgent]);
 
   const subCount = root.children.length;
-  const t = transform ?? { scale: 1, x: 0, y: 0 };
   const totalAll = statusCounts.running + statusCounts.completed + statusCounts.error;
-
-  const btnClass =
-    "w-8 h-8 flex items-center justify-center rounded bg-gray-800 border border-gray-700 text-gray-300 hover:bg-gray-700 hover:text-white text-sm font-mono transition-colors";
 
   const filterButtons: { key: StatusFilter; label: string; count: number }[] = [
     { key: "all", label: "All", count: totalAll },
@@ -365,43 +281,29 @@ export function AgentTree({ root: rawRoot, activity = [], disablePrune = false }
         </div>
       </div>
 
-      {/* Zoom controls */}
-      <div className="absolute bottom-6 right-6 flex flex-col gap-1 z-10">
-        <button onClick={zoomIn} className={btnClass} title="Zoom in">+</button>
-        <button onClick={zoomOut} className={btnClass} title="Zoom out">−</button>
-        <button onClick={fitToView} className={btnClass} title="Reset view" style={{ fontSize: 10 }}>
-          ⟳
-        </button>
-      </div>
-
-      <div className="overflow-hidden rounded" style={{ height: viewH }}>
+      {/* Scrollable SVG — cards are always full size, no scaling */}
+      <div className="overflow-auto rounded" style={{ maxHeight: 700 }}>
         <svg
-          width="100%"
-          height={viewH}
-          onWheel={onWheel}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          style={{ cursor: dragging ? "grabbing" : "grab", userSelect: "none" }}
+          width={treeW}
+          height={treeH}
+          style={{ minWidth: "100%" }}
         >
           <defs>
             <filter id="card-shadow" x="-10%" y="-10%" width="120%" height="130%">
               <feDropShadow dx="0" dy="3" stdDeviation="4" floodColor="#000000" floodOpacity="0.5" />
             </filter>
           </defs>
-          <g transform={`translate(${t.x}, ${t.y}) scale(${t.scale})`}>
-            {filteredEdges.map((edge, i) => (
-              <TreeEdge key={i} edge={edge} orientation={orientation} />
-            ))}
-            {filteredNodes.map((n, i) => (
-              <TreeNode
-                key={n.node.agentId}
-                positioned={n}
-                index={i}
-                onClick={handleNodeClick}
-              />
-            ))}
-          </g>
+          {filteredEdges.map((edge, i) => (
+            <TreeEdge key={i} edge={edge} />
+          ))}
+          {filteredNodes.map((n, i) => (
+            <TreeNode
+              key={n.node.agentId}
+              positioned={n}
+              index={i}
+              onClick={handleNodeClick}
+            />
+          ))}
         </svg>
       </div>
 

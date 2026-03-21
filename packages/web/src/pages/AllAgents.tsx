@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import type { Session, AgentNode, ActivityEvent } from "@agents-ui/core/browser";
-import { getProjectDisplayName } from "@agents-ui/core/browser";
+import { getProjectDisplayName, pruneStaleAgents } from "@agents-ui/core/browser";
 import { AgentTree } from "../components/AgentTree.js";
 
 interface Props {
@@ -14,16 +14,19 @@ interface Props {
  * Build a virtual super-root whose children are each session's root agent,
  * relabeled with the project name so you can tell them apart on the map.
  */
+// 30-minute prune window for the unified view (vs 5 min on individual sessions)
+const ALL_AGENTS_PRUNE_MS = 30 * 60 * 1000;
+
 function buildUnifiedTree(sessions: Session[]): AgentNode {
   const children: AgentNode[] = sessions.map((s) => {
-    // Re-label the session root with the project name.
-    // Use the raw tree — no pruning — so all agents are visible.
+    const pruned = pruneStaleAgents(s.agentTree, ALL_AGENTS_PRUNE_MS);
     return {
-      ...s.agentTree,
+      ...pruned,
       agentId: `session-root-${s.id}`,
       name: getProjectDisplayName(s.projectDir),
       agentType: s.model ?? "session",
-      status: s.status === "active" ? "running" as const : s.agentTree.status,
+      status: s.status === "active" ? "running" as const : pruned.status,
+      completedAt: undefined, // prevent AgentTree's prune from removing session roots
     };
   });
 
@@ -113,7 +116,7 @@ export function AllAgents({ sessions, activity, onRefresh }: Props) {
           <p className="text-sm">Start a Claude Code session to see agents here.</p>
         </div>
       ) : (
-        <AgentTree root={unifiedRoot} activity={activity} disablePrune />
+        <AgentTree root={unifiedRoot} activity={activity} />
       )}
     </div>
   );

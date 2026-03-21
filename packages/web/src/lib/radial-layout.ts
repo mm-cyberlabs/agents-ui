@@ -1,4 +1,3 @@
-import { hierarchy, tree } from "d3-hierarchy";
 import type { AgentNode } from "@agents-ui/core/browser";
 
 export interface PositionedNode {
@@ -19,7 +18,6 @@ export interface TreeLayoutResult {
   edges: PositionedEdge[];
   width: number;
   height: number;
-  orientation: "vertical" | "horizontal";
 }
 
 const CARD_W = 200;
@@ -28,127 +26,94 @@ const H_GAP = 30;
 const V_GAP = 50;
 
 /**
- * Top-down tree layout. If the result is wider than `containerWidth`,
- * automatically switches to a left-to-right (horizontal) layout where
- * siblings stack vertically.
+ * Tree layout that wraps children into rows when they'd overflow the
+ * container width. Cards are always full-size — the layout grows
+ * vertically instead of scaling down.
+ *
+ * Children are laid out horizontally left-to-right, wrapping to a new
+ * row below when the next card wouldn't fit. Each depth level's rows
+ * are placed below the previous level.
  */
 export function computeTreeLayout(
   root: AgentNode,
   containerWidth?: number,
 ): TreeLayoutResult {
-  const h = hierarchy(root, (d) => d.children);
-  const nodeCount = h.descendants().length;
+  const pad = 30;
+  const cw = Math.max(containerWidth ?? 800, CARD_W + pad * 2);
+  const usableWidth = cw - pad * 2;
+  const maxPerRow = Math.max(1, Math.floor((usableWidth + H_GAP) / (CARD_W + H_GAP)));
 
-  if (nodeCount === 1) {
-    const pad = 40;
-    return {
-      nodes: [{ node: root, x: pad + CARD_W / 2, y: pad + CARD_H / 2 }],
-      edges: [],
-      width: CARD_W + pad * 2,
-      height: CARD_H + pad * 2,
-      orientation: "vertical",
-    };
+  // BFS to collect nodes by depth level
+  const levels: AgentNode[][] = [];
+  const queue: { node: AgentNode; depth: number }[] = [{ node: root, depth: 0 }];
+
+  while (queue.length > 0) {
+    const { node, depth } = queue.shift()!;
+    if (!levels[depth]) levels[depth] = [];
+    levels[depth].push(node);
+    for (const child of node.children) {
+      queue.push({ node: child, depth: depth + 1 });
+    }
   }
 
-  // Try top-down (vertical) layout first
-  const vertical = layoutTopDown(root);
+  // Position each level with wrapping rows
+  const placed = new Map<AgentNode, { x: number; y: number }>();
+  let currentY = pad + CARD_H / 2;
 
-  // If it fits or we don't know the container width, use vertical
-  if (!containerWidth || vertical.width <= containerWidth) {
-    return vertical;
+  for (const level of levels) {
+    const numRows = Math.ceil(level.length / maxPerRow);
+
+    for (let row = 0; row < numRows; row++) {
+      const start = row * maxPerRow;
+      const end = Math.min(start + maxPerRow, level.length);
+      const rowCount = end - start;
+
+      // Center this row within the container
+      const rowWidth = rowCount * CARD_W + (rowCount - 1) * H_GAP;
+      const startX = pad + (usableWidth - rowWidth) / 2 + CARD_W / 2;
+
+      for (let i = start; i < end; i++) {
+        const col = i - start;
+        const cx = startX + col * (CARD_W + H_GAP);
+        placed.set(level[i], { x: cx, y: currentY });
+      }
+
+      currentY += CARD_H + V_GAP;
+    }
   }
 
-  // Too wide — switch to left-to-right (horizontal) layout
-  return layoutLeftToRight(root);
-}
+  const nodes: PositionedNode[] = [];
+  const edges: PositionedEdge[] = [];
 
-/** Standard top-down layout: parent above, children spread horizontally */
-function layoutTopDown(root: AgentNode): TreeLayoutResult {
-  const h = hierarchy(root, (d) => d.children);
-
-  const treeLayout = tree<AgentNode>()
-    .nodeSize([CARD_W + H_GAP, CARD_H + V_GAP])
-    .separation(() => 1);
-
-  const treeData = treeLayout(h);
-  const allDescendants = treeData.descendants();
-
-  let minX = Infinity;
-  let maxX = -Infinity;
-  let maxY = -Infinity;
-  for (const d of allDescendants) {
-    if (d.x - CARD_W / 2 < minX) minX = d.x - CARD_W / 2;
-    if (d.x + CARD_W / 2 > maxX) maxX = d.x + CARD_W / 2;
-    if (d.y + CARD_H / 2 > maxY) maxY = d.y + CARD_H / 2;
+  for (const [node, pos] of placed) {
+    nodes.push({ node, x: pos.x, y: pos.y });
   }
 
-  const padX = 30;
-  const padY = 30;
-  const offsetX = -minX + padX;
-  const totalWidth = maxX - minX + padX * 2;
-  const totalHeight = maxY + padY * 2 + CARD_H / 2;
+  // Build edges by walking the tree
+  const walkEdges = (node: AgentNode) => {
+    const parentPos = placed.get(node);
+    if (!parentPos) return;
+    for (const child of node.children) {
+      const childPos = placed.get(child);
+      if (!childPos) continue;
+      edges.push({
+        source: { x: parentPos.x, y: parentPos.y },
+        target: { x: childPos.x, y: childPos.y },
+        sourceNode: node,
+        targetNode: child,
+      });
+      walkEdges(child);
+    }
+  };
+  walkEdges(root);
 
-  const nodes: PositionedNode[] = allDescendants.map((d) => ({
-    node: d.data,
-    x: d.x + offsetX,
-    y: d.y + padY,
-  }));
+  const totalHeight = currentY - V_GAP + CARD_H / 2 + pad;
+  const totalWidth = Math.max(
+    cw,
+    ...nodes.map((n) => n.x + CARD_W / 2 + pad),
+  );
 
-  const edges: PositionedEdge[] = treeData.links().map((link) => ({
-    source: { x: link.source.x + offsetX, y: link.source.y + padY },
-    target: { x: link.target.x + offsetX, y: link.target.y + padY },
-    sourceNode: link.source.data,
-    targetNode: link.target.data,
-  }));
-
-  return { nodes, edges, width: totalWidth, height: totalHeight, orientation: "vertical" };
-}
-
-/** Left-to-right layout: parent on the left, children stacked vertically */
-function layoutLeftToRight(root: AgentNode): TreeLayoutResult {
-  const h = hierarchy(root, (d) => d.children);
-
-  // d3.tree: x = perpendicular spread (vertical), y = depth (horizontal)
-  const treeLayout = tree<AgentNode>()
-    .nodeSize([CARD_H + V_GAP, CARD_W + H_GAP])
-    .separation(() => 1);
-
-  const treeData = treeLayout(h);
-  const allDescendants = treeData.descendants();
-
-  // d3 outputs: x = vertical position, y = depth (horizontal)
-  // We use them as: screen x = d.y, screen y = d.x
-  let minY = Infinity;
-  let maxY = -Infinity;
-  let maxX = -Infinity;
-  for (const d of allDescendants) {
-    const screenY = d.x; // vertical position
-    const screenX = d.y; // horizontal depth
-    if (screenY - CARD_H / 2 < minY) minY = screenY - CARD_H / 2;
-    if (screenY + CARD_H / 2 > maxY) maxY = screenY + CARD_H / 2;
-    if (screenX + CARD_W / 2 > maxX) maxX = screenX + CARD_W / 2;
-  }
-
-  const padX = 30;
-  const padY = 30;
-  const offsetY = -minY + padY;
-  const totalWidth = maxX + padX * 2 + CARD_W / 2;
-  const totalHeight = maxY - minY + padY * 2;
-
-  const nodes: PositionedNode[] = allDescendants.map((d) => ({
-    node: d.data,
-    x: d.y + padX, // depth → horizontal
-    y: d.x + offsetY, // spread → vertical
-  }));
-
-  const edges: PositionedEdge[] = treeData.links().map((link) => ({
-    source: { x: link.source.y + padX, y: link.source.x + offsetY },
-    target: { x: link.target.y + padX, y: link.target.x + offsetY },
-    sourceNode: link.source.data,
-    targetNode: link.target.data,
-  }));
-
-  return { nodes, edges, width: totalWidth, height: totalHeight, orientation: "horizontal" };
+  return { nodes, edges, width: totalWidth, height: totalHeight };
 }
 
 export { CARD_W, CARD_H };
