@@ -18,11 +18,24 @@ function getLogPath(): string {
   return join(homedir(), ".claude", "agents-ui-server.log");
 }
 
+function findTsxPaths(): { preflight: string; loader: string } {
+  // Resolve absolute paths to tsx's require/import hooks so we can
+  // use them with node directly (LaunchAgents don't have PATH).
+  const tsxPkgUrl = import.meta.resolve("tsx/package.json");
+  const tsxDist = join(new URL(tsxPkgUrl).pathname, "..", "dist");
+
+  return {
+    preflight: join(tsxDist, "preflight.cjs"),
+    loader: `file://${join(tsxDist, "loader.mjs")}`,
+  };
+}
+
 function buildPlist(port: number): string {
-  // Use the current node binary and script path so the LaunchAgent
-  // runs the same installation the user set up.
+  // Use node with tsx's require/import hooks to run .ts files directly.
+  // LaunchAgents don't inherit PATH, so all paths must be absolute.
   const nodeBin = process.execPath;
   const scriptPath = process.argv[1];
+  const tsx = findTsxPaths();
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -33,6 +46,10 @@ function buildPlist(port: number): string {
   <key>ProgramArguments</key>
   <array>
     <string>${nodeBin}</string>
+    <string>--require</string>
+    <string>${tsx.preflight}</string>
+    <string>--import</string>
+    <string>${tsx.loader}</string>
     <string>${scriptPath}</string>
     <string>serve</string>
     <string>--port</string>
