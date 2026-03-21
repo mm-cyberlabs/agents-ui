@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Session } from "@agents-ui/core/browser";
 import { getProjectDisplayName } from "@agents-ui/core/browser";
@@ -10,18 +9,16 @@ interface Props {
 export function WaitingAlert({ sessions }: Props) {
   const navigate = useNavigate();
 
-  const waitingSessions = useMemo(() => {
-    const result: Session[] = [];
-    for (const s of sessions.values()) {
-      if (s.waitingForInput) result.push(s);
-    }
-    return result;
-  }, [sessions]);
+  // Build list on every render — no useMemo so it's always in sync
+  const waitingSessions: Session[] = [];
+  for (const s of sessions.values()) {
+    if (s.waitingForInput) waitingSessions.push(s);
+  }
 
   if (waitingSessions.length === 0) return null;
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2 max-w-sm">
+    <div className="fixed top-16 right-4 z-50 flex flex-col gap-2 max-w-sm">
       {waitingSessions.map((s) => (
         <button
           key={s.id}
@@ -36,9 +33,7 @@ export function WaitingAlert({ sessions }: Props) {
           </div>
           <div className="text-yellow-200/80 text-xs font-mono truncate">
             {getProjectDisplayName(s.projectDir)}
-          </div>
-          <div className="text-yellow-200/50 text-xs mt-1">
-            Click to view session
+            <span className="text-yellow-200/40 ml-2">{s.id.slice(0, 8)}</span>
           </div>
         </button>
       ))}
