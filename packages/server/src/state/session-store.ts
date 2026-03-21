@@ -213,11 +213,13 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       this.addActivity(managed, activity);
     }
 
-    // Detect waiting-for-input state
+    // Detect waiting-for-input state.
+    // Stop = Claude finished its turn, waiting for user.
+    // Any other activity hook means Claude is working = not waiting.
     if (eventType === "Stop") {
       session.waitingForInput = true;
     }
-    if (eventType === "UserPromptSubmit") {
+    if (eventType === "UserPromptSubmit" || eventType === "SessionStart" || eventType === "SubagentStart") {
       session.waitingForInput = false;
     }
 
@@ -282,12 +284,14 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       session.model = line.message.model;
     }
 
-    // Detect waiting-for-input from JSONL
-    if (line.type === "assistant" && line.message.stop_reason === "end_turn") {
-      session.waitingForInput = true;
+    // Detect waiting-for-input from JSONL.
+    // Any new assistant message means the user already answered (or Claude
+    // is continuing). Set waiting only if this turn ends with end_turn.
+    if (line.type === "assistant") {
+      session.waitingForInput = line.message.stop_reason === "end_turn";
     }
+    // Real user input also clears waiting.
     if (line.type === "user" && !line.isMeta && !line.toolUseResult) {
-      // Only clear on real user input, not tool results or subagent returns
       const content = line.message.content;
       const isToolResult =
         Array.isArray(content) && content.some((b) => (b as { type: string }).type === "tool_result");
