@@ -68,6 +68,12 @@ export function Dashboard({ sessions, connected }: Props) {
         </div>
         <div className="flex items-center gap-4">
           <Link
+            to="/agents"
+            className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
+          >
+            All Agents
+          </Link>
+          <Link
             to="/config"
             className="text-sm text-gray-400 hover:text-cyan-400 transition-colors"
           >

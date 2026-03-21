@@ -46,10 +46,13 @@ function getDescription(evt: ActivityEvent): string {
 }
 
 export function ActivityStream({ events }: { events: ActivityEvent[] }) {
-  const bottomRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = containerRef.current;
+    if (el) {
+      el.scrollTop = el.scrollHeight;
+    }
   }, [events.length]);
 
   if (events.length === 0) {
@@ -65,7 +68,7 @@ export function ActivityStream({ events }: { events: ActivityEvent[] }) {
       <div className="p-3 border-b border-gray-800">
         <h3 className="text-sm font-bold text-cyan-400">Activity Feed</h3>
       </div>
-      <div className="max-h-96 overflow-y-auto p-2 space-y-0.5">
+      <div ref={containerRef} className="max-h-96 overflow-y-auto p-2 space-y-0.5">
         {events.map((evt) => {
           const config = EVENT_CONFIG[evt.type];
           return (
@@ -78,7 +81,6 @@ export function ActivityStream({ events }: { events: ActivityEvent[] }) {
             </div>
           );
         })}
-        <div ref={bottomRef} />
       </div>
     </div>
   );

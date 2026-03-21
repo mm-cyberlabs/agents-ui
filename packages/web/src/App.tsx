@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useWs } from "./hooks/use-ws.js";
 import { Dashboard } from "./pages/Dashboard.js";
 import { SessionDetail } from "./pages/SessionDetail.js";
+import { AllAgents } from "./pages/AllAgents.js";
 import { ConfigPage } from "./pages/ConfigPage.js";
 import { VersionBanner } from "./components/VersionBanner.js";
 import { WaitingAlert } from "./components/WaitingAlert.js";
@@ -27,6 +28,10 @@ export function App() {
         <Route
           path="/session/:id"
           element={<SessionDetail sessions={sessions} activity={activity} />}
+        />
+        <Route
+          path="/agents"
+          element={<AllAgents sessions={sessions} activity={activity} />}
         />
         <Route path="/config" element={<ConfigPage />} />
       </Routes>
