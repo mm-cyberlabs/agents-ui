@@ -30,6 +30,8 @@ const IDLE_TIMEOUT_MS = 60_000; // 60s to idle
 const COMPLETED_TIMEOUT_MS = 300_000; // 5min to completed
 const MAX_RECENT_ACTIVITY = 200;
 
+const WAITING_DELAY_MS = 30_000; // 30s after end_turn with no new activity
+
 interface ManagedSession {
   session: Session;
   treeBuilder: AgentTreeBuilder;
@@ -37,6 +39,7 @@ interface ManagedSession {
   subagentTails: Map<string, JsonlTail>;
   idleTimer?: ReturnType<typeof setTimeout>;
   pendingToolTimer?: ReturnType<typeof setTimeout>;
+  waitingTimer?: ReturnType<typeof setTimeout>;
 }
 
 export class SessionStore extends EventEmitter<SessionStoreEvents> {
@@ -124,6 +127,7 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       for (const [, subTail] of managed.subagentTails) subTail.stop();
       if (managed.idleTimer) clearTimeout(managed.idleTimer);
       if (managed.pendingToolTimer) clearTimeout(managed.pendingToolTimer);
+      if (managed.waitingTimer) clearTimeout(managed.waitingTimer);
     }
     this.sessions.clear();
   }
@@ -218,29 +222,13 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     }
 
     // Detect waiting-for-input state.
-    // Only set waiting=true for tool permission prompts (PreToolUse
-    // without a matching PostToolUse within 3s). The Stop hook is NOT
-    // used because it fires both when waiting for input AND when a
-    // task is complete — no way to distinguish the two.
-    if (eventType === "UserPromptSubmit" || eventType === "SessionStart" || eventType === "SubagentStart") {
-      session.waitingForInput = false;
-    }
-
-    // Track tool permission prompts: PreToolUse fires before user approval.
-    // If PostToolUse doesn't follow within 3s, the tool is waiting for permission.
-    if (eventType === "PreToolUse") {
-      if (managed.pendingToolTimer) clearTimeout(managed.pendingToolTimer);
-      managed.pendingToolTimer = setTimeout(() => {
-        session.waitingForInput = true;
-        this.emit("session:updated", session);
-      }, 3000);
-    }
-    if (eventType === "PostToolUse" || eventType === "PostToolUseFailure") {
-      if (managed.pendingToolTimer) {
-        clearTimeout(managed.pendingToolTimer);
-        managed.pendingToolTimer = undefined;
-      }
-      session.waitingForInput = false;
+    // Any hook activity means the session is alive — clear waiting.
+    // Waiting is only set by the Notification hook (explicit user prompt)
+    // or the idle-with-end_turn check in checkSessionStatuses.
+    session.waitingForInput = false;
+    if (managed.pendingToolTimer) {
+      clearTimeout(managed.pendingToolTimer);
+      managed.pendingToolTimer = undefined;
     }
 
     if (eventType === "SessionEnd") {
@@ -287,22 +275,23 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
       session.model = line.message.model;
     }
 
-    // Clear waiting-for-input from JSONL when the user responds or
-    // Claude starts a new turn. Don't SET it from JSONL — end_turn is
-    // ambiguous (could be waiting or task-complete). Only real-time
-    // hooks (Stop, PreToolUse timer) set waitingForInput to true.
-    if (line.type === "assistant") {
-      // Claude is responding — user already answered
-      if (line.message.stop_reason !== "end_turn") {
-        session.waitingForInput = false;
-      }
-    } else if (line.type === "user" && !line.isMeta && !line.toolUseResult) {
-      const content = line.message.content;
-      const isToolResult =
-        Array.isArray(content) && content.some((b) => (b as { type: string }).type === "tool_result");
-      if (!isToolResult) {
-        session.waitingForInput = false;
-      }
+    // Waiting-for-input detection from JSONL.
+    // Any new line cancels the previous waiting timer.
+    if (managed.waitingTimer) {
+      clearTimeout(managed.waitingTimer);
+      managed.waitingTimer = undefined;
+    }
+    session.waitingForInput = false;
+
+    // When Claude finishes with end_turn, start a 30s timer.
+    // If no new JSONL lines arrive within 30s, the session is
+    // genuinely waiting for user input (not just between tool calls).
+    if (line.type === "assistant" && line.message.stop_reason === "end_turn") {
+      managed.waitingTimer = setTimeout(() => {
+        session.waitingForInput = true;
+        managed.waitingTimer = undefined;
+        this.emit("session:updated", session);
+      }, WAITING_DELAY_MS);
     }
 
     // Generate activity events
