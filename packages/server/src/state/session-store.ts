@@ -218,11 +218,10 @@ export class SessionStore extends EventEmitter<SessionStoreEvents> {
     }
 
     // Detect waiting-for-input state.
-    // Stop = Claude finished its turn, waiting for user.
-    // Any other activity hook means Claude is working = not waiting.
-    if (eventType === "Stop") {
-      session.waitingForInput = true;
-    }
+    // Only set waiting=true for tool permission prompts (PreToolUse
+    // without a matching PostToolUse within 3s). The Stop hook is NOT
+    // used because it fires both when waiting for input AND when a
+    // task is complete — no way to distinguish the two.
     if (eventType === "UserPromptSubmit" || eventType === "SessionStart" || eventType === "SubagentStart") {
       session.waitingForInput = false;
     }
